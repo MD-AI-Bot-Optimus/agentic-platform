@@ -1,6 +1,6 @@
 import pytest
-from platform.audit import audit_log
-from platform.core.types import AuditEvent
+from agentic_platform.audit import audit_log
+from agentic_platform.core.types import AuditEvent
 
 def test_audit_events_are_immutable_and_correlated():
     log = audit_log.InMemoryAuditLog()

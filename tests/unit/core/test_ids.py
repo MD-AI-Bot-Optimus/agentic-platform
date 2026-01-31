@@ -1,6 +1,6 @@
 import pytest
 
-from platform.core import ids
+from agentic_platform.core import ids
 
 def test_job_id_generation():
     job_id = ids.generate_job_id()

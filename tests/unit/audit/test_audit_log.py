@@ -1,6 +1,6 @@
 import pytest
-from platform.audit import audit_log
-from platform.core.types import AuditEvent
+from agentic_platform.audit import audit_log
+from agentic_platform.core.types import AuditEvent
 
 class DummyEvent(AuditEvent):
     pass

@@ -1,5 +1,5 @@
 import pytest
-from platform.tools import fake_tools
+from agentic_platform.tools import fake_tools
 
 def test_fake_tool_client_returns_fixture():
     client = fake_tools.FakeToolClient()

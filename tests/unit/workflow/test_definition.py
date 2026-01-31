@@ -1,5 +1,5 @@
 import pytest
-from platform.workflow import definition
+from agentic_platform.workflow import definition
 import tempfile
 import yaml
 

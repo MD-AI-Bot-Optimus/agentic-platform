@@ -1,5 +1,5 @@
 import pytest
-from platform.tools import tool_registry
+from agentic_platform.tools import tool_registry
 
 def test_tool_registry_register_and_call():
     def echo_handler(args):
