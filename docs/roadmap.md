@@ -72,6 +72,7 @@ This document details the incremental, test-driven development (TDD) roadmap for
 48. test: PII redaction in audit logs
 49. feat: implement PII redaction middleware (PiiRedactor)
 50. docs: ADR for tool contracts, audit, workflow DSL
+51. test: integration test for workflow engine with stubbed adapter and audit log
 
 ---
 

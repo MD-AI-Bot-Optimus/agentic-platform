@@ -13,7 +13,8 @@ This document describes the testing philosophy, coverage goals, and practical ap
   - Use in-memory/fake implementations for all ports
   - Located in `tests/unit/`
 - **Integration Tests:**
-  - Validate contracts between modules and with real adapters (when added)
+  - Validate contracts between modules and with real or stubbed adapters
+  - Example: integration test for workflow engine with stubbed adapter and audit log
   - Located in `tests/integration/`
 - **End-to-End (E2E) Tests:**
   - Planned for full workflow execution, including CLI and real integrations
