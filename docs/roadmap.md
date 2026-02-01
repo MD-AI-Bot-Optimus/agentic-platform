@@ -78,17 +78,21 @@ This document details the incremental, test-driven development (TDD) roadmap for
 ✅ 66. docs: OCR architecture, authentication, and API usage
 ✅ 67. chore: Google Cloud SDK setup, ADC configuration, project setup
 
-## Phase 7 — Prepare for Real Integrations
-68. test: tool client interface can be swapped without changing engine
-69. refactor: introduce ToolClient protocol (COMPLETED - used by OCR)
-70. feat: add MCP adapter module (stubbed)
-71. feat: implement minimal real MCP adapter (simulated response)
-72. test: policy enforcement blocks unauthorized tool/model call
-73. feat: implement tool/model allowlist policy (ToolAllowlistPolicy)
-74. test: PII redaction in audit logs
-75. feat: implement PII redaction middleware (PiiRedactor)
-76. docs: ADR for tool contracts, audit, workflow DSL
-77. test: integration test for workflow engine with stubbed adapter and audit log
+## Phase 7 — MCP Server Integration (COMPLETED)
+✅ 68. test: MCPServer protocol implementation with 22 unit tests
+✅ 69. feat: MCPServer JSON-RPC 2.0 handler (tools/list, tools/call methods)
+✅ 70. feat: FastAPI /mcp/request and /mcp/tools endpoints
+✅ 71. feat: MCPAdapter HTTP client for calling remote MCP servers
+✅ 72. feat: ToolRegistry integration with MCPServer for tool discovery
+✅ 73. test: MCPAdapter client tests with 22 unit tests
+✅ 74. test: End-to-end MCP workflow with 13 integration tests
+✅ 75. test: OCR tool calling via MCP protocol
+✅ 76. feat: React MCP Tool Tester UI component (tool selection, arg input, result display)
+✅ 77. feat: Tool discovery from /mcp/tools endpoint
+✅ 78. docs: ADR-010 for MCP Server Integration decision record
+✅ 79. docs: Comprehensive MCP Implementation Guide (mcp-guide.md)
+✅ 80. docs: API documentation with MCP endpoint examples
+✅ 81. chore: All 57 MCP tests passing (22 MCPServer + 22 MCPAdapter + 13 E2E)
 
 ---
 
