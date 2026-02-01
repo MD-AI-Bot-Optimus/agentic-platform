@@ -18,7 +18,10 @@ RUN pip install --no-cache-dir \
     requests>=2.31.0 \
     pyyaml>=6.0 \
     python-multipart>=0.0.6 \
-    jsonschema>=4.0.0
+    jsonschema>=4.0.0 \
+    httpx>=0.24.0 \
+    langgraph>=0.1.0 \
+    langchain>=0.1.0
 
 # Copy application code
 COPY src/ src/
