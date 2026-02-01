@@ -4,13 +4,14 @@ FastAPI application for Agentic Platform with OCR and workflow execution endpoin
 Provides:
 - POST /run-ocr/ : Extract text from images using Google Vision API
 - POST /run-workflow/ : Execute YAML-defined workflows with pluggable adapters
+- POST /mcp/request : Handle MCP (Model Context Protocol) requests
 """
 
 import json
 import logging
 import os
 import tempfile
-from typing import Optional
+from typing import Optional, Dict, Any
 
 import yaml
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
@@ -20,6 +21,7 @@ from fastapi.responses import JSONResponse
 from agentic_platform.audit.audit_log import InMemoryAuditLog
 from agentic_platform.tools.tool_registry import ToolRegistry
 from agentic_platform.adapters.mcp_adapter import MCPAdapter
+from agentic_platform.adapters.mcp_server import MCPServer
 from agentic_platform.adapters.langgraph_adapter import LangGraphAdapter
 from agentic_platform.workflow import engine
 
@@ -27,9 +29,13 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Agentic Platform API",
-    description="REST API for OCR and workflow execution",
+    description="REST API for OCR, workflow execution, and MCP protocol",
     version="0.1.0"
 )
+
+# Initialize global tool registry and MCP server
+tool_registry = ToolRegistry()
+mcp_server = MCPServer(tool_registry, version="0.1.0")
 
 # CORS configuration for development
 app.add_middleware(
@@ -202,3 +208,88 @@ async def run_workflow(
             detail=f"Workflow execution error: {str(e)}"
         )
 
+
+# ============================================================================
+# MCP (Model Context Protocol) Endpoints
+# ============================================================================
+
+@app.post("/mcp/request")
+async def handle_mcp_request(request: Dict[str, Any]) -> JSONResponse:
+    """
+    Handle MCP (Model Context Protocol) JSON-RPC 2.0 requests.
+
+    Supports the following methods:
+    - initialize: Handshake and capability negotiation
+    - tools/list: Discover available tools
+    - tools/call: Execute a tool
+
+    Args:
+        request: JSON-RPC 2.0 request object
+
+    Returns:
+        JSON-RPC 2.0 response (success or error)
+
+    Example:
+        POST /mcp/request
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/list"
+        }
+    """
+    try:
+        logger.debug(f"MCP request received: {request.get('method')}")
+
+        # Handle the MCP request via server
+        response = mcp_server.handle_request(request)
+
+        logger.debug(f"MCP response: {response.get('result') or response.get('error')}")
+        return JSONResponse(response)
+
+    except Exception as e:
+        logger.error("MCP request handling error", exc_info=True)
+        # Return MCP error response
+        error_response = {
+            "jsonrpc": "2.0",
+            "error": {
+                "code": -32603,
+                "message": "Internal error",
+                "data": {"details": str(e)}
+            },
+            "id": request.get("id")
+        }
+        return JSONResponse(error_response, status_code=500)
+
+
+@app.get("/mcp/tools")
+async def list_mcp_tools() -> JSONResponse:
+    """
+    Get list of available tools in a simplified format (non-MCP).
+
+    Returns:
+        JSON array of tools with name, description, and inputSchema
+
+    This endpoint is useful for UI discovery without MCP protocol overhead.
+    """
+    try:
+        tool_names = tool_registry.list_tools()
+        tools = []
+
+        for name in tool_names:
+            tool_spec = tool_registry.get_tool(name)
+            if tool_spec:
+                tools.append({
+                    "name": name,
+                    "description": tool_spec.description,
+                    "inputSchema": tool_spec.schema
+                })
+
+        logger.debug(f"Listed {len(tools)} tools")
+        return JSONResponse({"tools": tools})
+
+    except Exception as e:
+        logger.error("Error listing tools", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error listing tools: {str(e)}"
+        )
