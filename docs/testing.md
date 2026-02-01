@@ -17,6 +17,7 @@ This document describes the testing philosophy, coverage goals, and practical ap
   - Example: integration test for workflow engine with stubbed adapter and audit log
   - Example: integration test for branching workflow (conditional edges)
   - Example: integration test for error handling (adapter failure, audit log error event)
+  - Example: integration test for artifact storage (S3 adapter, audit log linkage)
   - Located in `tests/integration/`
 - **End-to-End (E2E) Tests:**
   - Planned for full workflow execution, including CLI and real integrations

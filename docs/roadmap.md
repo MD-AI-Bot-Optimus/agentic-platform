@@ -1,3 +1,4 @@
+56. test: integration test for artifact storage (S3 adapter, audit log linkage)
 55. test: integration test for error handling (adapter failure, audit log error event)
 54. test: integration test for branching workflow (conditional edges)
 # Project Roadmap & TDD Commit History
