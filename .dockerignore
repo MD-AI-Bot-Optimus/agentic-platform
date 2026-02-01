@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+dist
+build
+.venv
+venv
+
+# Node
+node_modules
+.npm
+ui/dist
+ui/build
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.env
+.env.local
+
+# Test coverage
+.coverage
+htmlcov
+
+# Logs
+*.log
+npm-debug.log
+
+# UI node_modules (not needed in Docker)
+ui/node_modules
+
+# Pycache
+**/__pycache__/
+**/*.pyc

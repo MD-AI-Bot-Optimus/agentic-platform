@@ -1,0 +1,56 @@
+steps:
+  # Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/agentic-platform-api:$SHORT_SHA'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/agentic-platform-api:latest'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=us-central1'
+
+  # Push to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push'
+    args:
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/agentic-platform-api'
+    waitFor: ['build']
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/cloud-builders/run'
+    id: 'deploy'
+    args:
+      - 'deploy'
+      - 'agentic-platform-api'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/agentic-platform-api:$SHORT_SHA'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--memory'
+      - '512Mi'
+      - '--cpu'
+      - '2'
+      - '--timeout'
+      - '3600'
+      - '--allow-unauthenticated'
+      - '--set-env-vars'
+      - 'PYTHONUNBUFFERED=1'
+    waitFor: ['push']
+
+images:
+  - 'gcr.io/$PROJECT_ID/agentic-platform-api:$SHORT_SHA'
+  - 'gcr.io/$PROJECT_ID/agentic-platform-api:latest'
+
+options:
+  machineType: 'N1_HIGHCPU_8'
+  logging: CLOUD_LOGGING_ONLY
+
+timeout: '3600s'
