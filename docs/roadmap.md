@@ -46,6 +46,7 @@ This document details the incremental, test-driven development (TDD) roadmap for
 33. feat: artifact hashing + audit linking
 34. refactor: separate workflow node executor from engine
 
+
 ## Phase 5 — End-to-end MVP workflow
 35. test: end-to-end OCR MVP happy path
 36. feat: add OCR MVP workflow YAML
@@ -55,6 +56,12 @@ This document details the incremental, test-driven development (TDD) roadmap for
 40. test: review approval resumes workflow
 41. feat: implement resume token + state hydration
 42. chore: add CLI runner + JSON output
+
+## Phase 5.5 — Model Selection
+43. test: model selection per node/task (red)
+44. feat: implement ModelRouter for routing tool calls to specific GPT/model
+45. test: fallback/default model selection logic
+46. docs: update architecture and usage for model selection
 
 ## Phase 6 — Prepare for Real Integrations
 43. test: tool client interface can be swapped without changing engine

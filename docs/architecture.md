@@ -2,12 +2,13 @@
 
 This document describes the architecture, interfaces, and extension points of the Multi-AI Agentic Platform.
 
+
 ## High-Level Architecture
 - **Core:** IDs, types, errors, and validation
 - **Audit:** In-memory audit log, immutable audit events, event helpers
-- **Tools:** Tool registry, tool protocol, fake tool client (for tests)
-- **Workflow:** Workflow definition parser, (future) engine, state management
-- **Agents:** (Planned) agent registry, agent base classes
+- **Tools:** Tool registry, tool protocol, fake tool client (for tests), **ModelRouter for model selection per node/task**
+- **Workflow:** Workflow definition parser, engine, state management
+- **Agents:** Agent registry, agent base classes
 - **Adapters:** All external integrations (MCP, LangGraph, n8n, DB, SaaS) are adapters implementing platform interfaces
 
 ## Key Interfaces (Ports)
@@ -17,7 +18,9 @@ This document describes the architecture, interfaces, and extension points of th
 - `AgentRegistry`: `register(agent)`, `list()`, `get(name, version)`
 - `WorkflowEngine`: `run(definition, input_artifact)`
 
+
 ## Extension Points
+- **Model Selection:** Use ModelRouter to select and route tool calls to specific GPT/model per node/task
 - **Adapters:** Add new adapters for MCP, LangGraph, n8n, S3, DB, etc. by implementing the relevant interface
 - **Nodes:** Add new node types to the workflow engine (e.g., human review, branching, custom tools)
 - **Policies:** Add policy enforcement (e.g., tool allowlist, PII redaction) as middleware or node logic
