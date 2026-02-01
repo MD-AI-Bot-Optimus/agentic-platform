@@ -15,6 +15,8 @@ RUN pip install --no-cache-dir -e .
 # Copy application code
 COPY src/ src/
 COPY sample_data/ sample_data/
+COPY entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
@@ -23,5 +25,5 @@ ENV PYTHONUNBUFFERED=1
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:${PORT:-8080}/docs')" || exit 1
 
-# Run the application - read PORT from environment variable (Cloud Run sets this automatically)
-CMD ["sh", "-c", "uvicorn src.agentic_platform.api:app --host 0.0.0.0 --port ${PORT:-8080}"]
+# Run via entrypoint script
+ENTRYPOINT ["/app/entrypoint.sh"]
