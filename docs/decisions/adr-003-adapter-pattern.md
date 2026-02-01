@@ -10,8 +10,8 @@ The platform must support integration with multiple external systems (MCP, LangG
 We use the Adapter Pattern for all external integrations. Each integration (e.g., MCP, LangGraph) is implemented as an adapter module in `src/agentic_platform/adapters/`. Adapters expose a common interface (e.g., `call(tool_name, args)`) and are swappable in tests and production.
 
 **Relevant code:**
-- Adapter modules: [src/agentic_platform/adapters/](../../src/agentic_platform/adapters/)
-- Adapter interface example: [src/agentic_platform/adapters/mcp_adapter.py](../../src/agentic_platform/adapters/mcp_adapter.py)
+- All adapters are implemented in [src/agentic_platform/adapters/](../../src/agentic_platform/adapters/). Each adapter (e.g., MCP, LangGraph, n8n, S3, DB, SaaS) is a separate module following a common interface.
+- The adapter interface (see [src/agentic_platform/adapters/mcp_adapter.py](../../src/agentic_platform/adapters/mcp_adapter.py)) defines the contract for tool calls and artifact storage. Adapters can be swapped in the workflow engine and are used in both unit and integration tests.
 
 ## Consequences
 - Core logic remains stable and testable.

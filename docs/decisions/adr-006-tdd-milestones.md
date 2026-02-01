@@ -14,8 +14,8 @@ To ensure reliability, maintainability, and safe evolution of the platform, all 
 - Documentation (README, roadmap, ADRs) is updated at each milestone.
 
 **Relevant code:**
-- Example unit test: [tests/unit/workflow/test_engine.py](../../tests/unit/workflow/test_engine.py)
-- Example integration test: [tests/integration/test_api.py](../../tests/integration/test_api.py)
+- Example unit test: [tests/unit/workflow/test_engine.py](../../tests/unit/workflow/test_engine.py) demonstrates TDD for the workflow engine, with tests written before implementation and updated as features evolve.
+- Example integration test: [tests/integration/test_api.py](../../tests/integration/test_api.py) shows end-to-end testing of the REST API, verifying that the system works as a whole and that new features are always covered by tests before being committed.
 
 ## Consequences
 - High test coverage and confidence in changes.
