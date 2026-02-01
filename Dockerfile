@@ -18,11 +18,10 @@ COPY sample_data/ sample_data/
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV PORT=8080
 
-# Health check
+# Health check (Cloud Run sets PORT automatically, default to 8080)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:${PORT}/docs')" || exit 1
+    CMD python -c "import requests; requests.get('http://localhost:${PORT:-8080}/docs')" || exit 1
 
-# Run the application - read PORT from environment variable
+# Run the application - read PORT from environment variable (Cloud Run sets this automatically)
 CMD ["sh", "-c", "uvicorn src.agentic_platform.api:app --host 0.0.0.0 --port ${PORT:-8080}"]

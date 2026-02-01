@@ -43,7 +43,7 @@ steps:
       - '3600'
       - '--allow-unauthenticated'
       - '--set-env-vars'
-      - 'PYTHONUNBUFFERED=1,PORT=8080'
+      - 'PYTHONUNBUFFERED=1'
     waitFor: ['push']
 
 images:
