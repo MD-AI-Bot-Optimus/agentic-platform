@@ -25,6 +25,7 @@ COPY sample_data/ sample_data/
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app/src
 
 # Run the application - use shell form to expand PORT variable
 # Cloud Run automatically sets PORT to 8080
