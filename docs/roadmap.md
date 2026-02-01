@@ -94,6 +94,17 @@ This document details the incremental, test-driven development (TDD) roadmap for
 ✅ 80. docs: API documentation with MCP endpoint examples
 ✅ 81. chore: All 57 MCP tests passing (22 MCPServer + 22 MCPAdapter + 13 E2E)
 
+## Phase 7.5 — UI Polish & Documentation (COMPLETED)
+✅ 82. feat: Restructure UI cards into 2-column responsive grid layout
+✅ 83. feat: Add Highway 1 Pacific Coast background image
+✅ 84. feat: Fixed sticky header that doesn't scroll beyond
+✅ 85. feat: Improved card styling with shadows and borders
+✅ 86. chore: Remove unused CSS and SVG files
+✅ 87. docs: Update main README with current status and features
+✅ 88. docs: Update UI README with component descriptions and guide
+✅ 89. docs: Update roadmap with Phase 7.5 completion
+✅ 90. docs: Add sample data for OCR testing (handwriting, letter, images)
+
 ---
 
 For each phase, see the codebase and docs for detailed implementation and test coverage.

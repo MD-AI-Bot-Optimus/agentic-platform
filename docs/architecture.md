@@ -11,15 +11,36 @@ This document describes the architecture, interfaces, and extension points of th
 
 
 ## High-Level Architecture
-- **UI:** Modern React frontend (Material UI) for workflow execution, OCR, adapter selection, and result/audit log visualization
-- **API:** FastAPI backend with `/run-ocr/` and `/run-workflow/` endpoints
+- **UI:** Modern React frontend (Material-UI with 2-column grid layout, Highway 1 background)
+  - OCR demo for image text extraction
+  - MCP tool tester for tool discovery and execution
+  - Workflow runner for YAML execution
+  - Results dashboard with audit log visualization
+- **API:** FastAPI backend with multiple endpoints:
+  - `/run-ocr/` - Image processing with Google Vision API
+  - `/run-workflow/` - Workflow execution with adapter selection
+  - `/mcp/tools` - MCP tool discovery
+  - `/mcp/request` - MCP JSON-RPC 2.0 protocol handler
 - **Core:** IDs, types, errors, and validation
-- **Audit:** In-memory audit log, immutable audit events, event helpers
-- **Tools:** Tool registry, tool protocol, fake tool client (for tests), **ModelRouter for model selection per node/task**, **GoogleVisionOCR for OCR**
-- **Workflow:** Workflow definition parser (YAML with nodes/edges), engine, state management
-- **Agents:** Agent registry, agent base classes
-- **Adapters:** All external integrations (MCP, LangGraph, n8n, DB, SaaS, Google Vision) are adapters implementing platform interfaces. See [adapters.md](adapters.md).
-- **Google Cloud Integration:** Application Default Credentials (ADC) for authentication, Cloud Vision API for OCR
+- **Audit:** In-memory audit log, immutable audit events with correlation tracking
+- **Tools:** 
+  - Tool registry with plugin system
+  - Tool protocol for standardized interfaces
+  - ModelRouter for model selection per node/task
+  - GoogleVisionOCR for OCR via Google Cloud Vision API
+  - Policies: ToolAllowlistPolicy, PiiRedactor middleware
+- **Workflow:** 
+  - YAML-based workflow definitions (nodes + edges)
+  - Engine with conditional branching and retry logic
+  - State management and artifact linking
+- **Agents:** Agent registry, base classes, artifact store integration
+- **Adapters:** All external integrations implement adapter pattern:
+  - **MCPAdapter** - JSON-RPC 2.0 protocol for tool discovery and calling
+  - **LangGraphAdapter** - Graph-based workflow orchestration (coming Phase 8)
+  - **n8nAdapter** - Visual workflow builder (coming Phase 9)
+  - **S3ArtifactStore**, **DBArtifactStore** - Artifact persistence
+  - **GoogleVisionOCR** - Image text extraction
+- **Integrations:** Google Cloud SDK (Application Default Credentials for auth)
 
 ## Key Interfaces (Ports)
 - `ToolClient`: `call(tool_name, args) -> result`
