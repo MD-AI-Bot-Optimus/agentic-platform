@@ -14,7 +14,11 @@ dependencies = [
     "pytest>=7.0.0",
     "ruff>=0.1.0",
     "black>=23.0.0",
-    "mypy>=1.0.0"
+    "mypy>=1.0.0",
+    "fastapi>=0.100.0",
+    "uvicorn>=0.23.0",
+    "google-cloud-vision>=3.0.0",
+    "requests>=2.31.0"
 ]
 
 [tool.pytest.ini_options]
