@@ -6,11 +6,18 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy and install Python dependencies
 COPY pyproject.toml pyproject.toml
-RUN pip install --no-cache-dir -e .
+RUN pip install --no-cache-dir \
+    fastapi>=0.100.0 \
+    uvicorn>=0.23.0 \
+    google-cloud-vision>=3.0.0 \
+    requests>=2.31.0 \
+    pyyaml>=6.0 \
+    python-multipart>=0.0.6
 
 # Copy application code
 COPY src/ src/
