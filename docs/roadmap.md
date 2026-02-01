@@ -53,9 +53,9 @@ This document details the incremental, test-driven development (TDD) roadmap for
 
 
 ## Phase 5 — End-to-end MVP workflow
-35. test: end-to-end OCR MVP happy path
-36. feat: add OCR MVP workflow YAML
-37. feat: add fake tool fixtures for OCR flow
+35. ✅ test: end-to-end OCR MVP happy path (COMPLETED)
+36. ✅ feat: add OCR MVP workflow YAML (COMPLETED)
+37. ✅ feat: add fake tool fixtures for OCR flow (COMPLETED)
 38. test: end-to-end low-confidence route to human review
 39. feat: implement review queue as state + artifact
 40. test: review approval resumes workflow
@@ -68,17 +68,27 @@ This document details the incremental, test-driven development (TDD) roadmap for
 45. test: fallback/default model selection logic
 46. docs: update architecture and usage for model selection
 
-## Phase 6 — Prepare for Real Integrations
-43. test: tool client interface can be swapped without changing engine
-44. refactor: introduce ToolClient protocol
-45. feat: add MCP adapter module (stubbed)
-52. feat: implement minimal real MCP adapter (simulated response)
-46. test: policy enforcement blocks unauthorized tool/model call
-47. feat: implement tool/model allowlist policy (ToolAllowlistPolicy)
-48. test: PII redaction in audit logs
-49. feat: implement PII redaction middleware (PiiRedactor)
-50. docs: ADR for tool contracts, audit, workflow DSL
-51. test: integration test for workflow engine with stubbed adapter and audit log
+## Phase 6 — Google Vision OCR Integration (COMPLETED)
+✅ 60. test: OCR integration end-to-end (image upload, extraction, formatted output)
+✅ 61. feat: GoogleVisionOCR adapter with Application Default Credentials (ADC)
+✅ 62. feat: `/run-ocr/` FastAPI endpoint with multipart form support
+✅ 63. feat: OCR workflow YAML (ocr_mvp.yaml) with nodes/edges format
+✅ 64. feat: React OCR demo component with image upload and results display
+✅ 65. feat: formatted text output with line-by-line display
+✅ 66. docs: OCR architecture, authentication, and API usage
+✅ 67. chore: Google Cloud SDK setup, ADC configuration, project setup
+
+## Phase 7 — Prepare for Real Integrations
+68. test: tool client interface can be swapped without changing engine
+69. refactor: introduce ToolClient protocol (COMPLETED - used by OCR)
+70. feat: add MCP adapter module (stubbed)
+71. feat: implement minimal real MCP adapter (simulated response)
+72. test: policy enforcement blocks unauthorized tool/model call
+73. feat: implement tool/model allowlist policy (ToolAllowlistPolicy)
+74. test: PII redaction in audit logs
+75. feat: implement PII redaction middleware (PiiRedactor)
+76. docs: ADR for tool contracts, audit, workflow DSL
+77. test: integration test for workflow engine with stubbed adapter and audit log
 
 ---
 

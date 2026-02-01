@@ -1,2 +1,33 @@
-# Placeholder for OCR MVP workflow YAML
-description: OCR MVP workflow definition
+
+# OCR MVP workflow using Google Vision OCR tool
+description: OCR MVP workflow using Google Vision OCR tool
+inputs:
+  image_path:
+    type: string
+    description: Path to the image file to OCR
+  credentials_json:
+    type: string
+    description: Path to Google credentials JSON file (optional)
+    required: false
+nodes:
+  - id: start
+    type: start
+  - id: ocr_step
+    type: tool
+    tool: google_vision_ocr
+    args:
+      image_path: "${inputs.image_path}"
+      credentials_json: "${inputs.credentials_json}"
+    output: ocr_result
+  - id: print_result
+    type: print
+    message: "OCR Text: ${ocr_result.text} (Confidence: ${ocr_result.confidence})"
+  - id: end
+    type: end
+edges:
+  - from: start
+    to: ocr_step
+  - from: ocr_step
+    to: print_result
+  - from: print_result
+    to: end

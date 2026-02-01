@@ -28,6 +28,9 @@ def main():
     result = engine.run(wf_def, input_artifact=input_artifact, tool_client=tool_client, audit_log=audit_log)
     print("Workflow result:")
     print(json.dumps(result, indent=2))
+    print("\nTool results:")
+    for tr in result.get("tool_results", []):
+        print(json.dumps(tr, indent=2))
     print("\nAudit log:")
     for event in audit_log.get_events("job-1"):
         print(vars(event))

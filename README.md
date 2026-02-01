@@ -45,30 +45,54 @@ See the linked docs for detailed plans, architecture, and progress.
 This project is built to be integration-ready. As the platform matures, MCP, LangGraph, and n8n will be incorporated as adapters, ensuring the core remains stable, testable, and easy to extend. All progress and integration steps will be milestone-driven and documented.
 
 
-## Usage
 
-### CLI
+## Quickstart (Modern UI & API)
 
+### 1. Clone and Start Everything
+
+```sh
+git clone <repo-url>
+cd agentic-platform
+chmod +x start_all.sh
+./start_all.sh
 ```
+
+This will start:
+- Backend API (FastAPI) on http://localhost:8002
+- Frontend UI (React/Material UI) on http://localhost:5173
+
+### 2. Using the UI
+
+Open http://localhost:5173 in your browser. Upload a workflow YAML and input JSON, select an adapter, and run workflows with a modern, responsive interface.
+
+### 3. Using the CLI
+
+```sh
 python -m src.agentic_platform.cli demo_workflow.yaml demo_input.json
 ```
 
-### REST API
+### 4. Using the API
 
-Start the API server:
-```
-uvicorn src.agentic_platform.api:app --reload
+Start the API server (if not using the script):
+```sh
+PYTHONPATH=src uvicorn src.agentic_platform.api:app --reload --port 8002
 ```
 Run a workflow via API:
-```
-curl -F "workflow=@demo_workflow.yaml" -F "input_artifact=@demo_input.json" http://localhost:8000/run-workflow/
+```sh
+curl -F "workflow=@demo_workflow.yaml" -F "input_artifact=@demo_input.json" http://localhost:8002/run-workflow/
 ```
 See docs/api.md for details.
 
-### Tests
+### 5. Running Tests
 
-```
+```sh
 pytest
 ```
 
-Happy hacking!
+---
+
+## Modern UI
+
+The React frontend now uses Material UI for a modern, responsive look. All workflow results, tool outputs, and audit logs are clearly displayed. See `ui/` for source and tests.
+
+---

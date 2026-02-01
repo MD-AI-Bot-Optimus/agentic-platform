@@ -23,6 +23,7 @@ def run(wf_def, input_artifact, tool_client, audit_log, stop_at_node=None, retur
         ))
     status = "running"
     used_persistence = return_state or resume_state is not None
+    tool_results = []
     while current["type"] != "end":
         node_key = (current["id"],)
         if node_key in visited:
@@ -32,9 +33,9 @@ def run(wf_def, input_artifact, tool_client, audit_log, stop_at_node=None, retur
             # Save state and return
             state = {"current_node_id": current["id"], "visited": list(visited)}
             if return_state:
-                return {"job_id": job_id, "status": "paused"}, state
+                return {"job_id": job_id, "status": "paused", "tool_results": tool_results}, state
             else:
-                return {"job_id": job_id, "status": "paused"}
+                return {"job_id": job_id, "status": "paused", "tool_results": tool_results}
         # Find all outgoing edges
         outgoing = [e for e in edges if e["from"] == current["id"]]
         # Select edge: if any edge has a 'condition', evaluate it
@@ -64,7 +65,8 @@ def run(wf_def, input_artifact, tool_client, audit_log, stop_at_node=None, retur
                 status="started"
             ))
             try:
-                tool_client.call(next_node["tool"], {})
+                tool_result = tool_client.call(next_node["tool"], input_artifact)
+                tool_results.append({"node_id": next_node["id"], "result": tool_result})
                 audit_log.emit(AuditEvent(
                     event_type="STEP_ENDED",
                     job_id=job_id,
@@ -91,5 +93,5 @@ def run(wf_def, input_artifact, tool_client, audit_log, stop_at_node=None, retur
         status="ended"
     ))
     if used_persistence:
-        return {"job_id": job_id, "status": status}, None
-    return {"job_id": job_id, "status": status}
+        return {"job_id": job_id, "status": status, "tool_results": tool_results}, None
+    return {"job_id": job_id, "status": status, "tool_results": tool_results}
