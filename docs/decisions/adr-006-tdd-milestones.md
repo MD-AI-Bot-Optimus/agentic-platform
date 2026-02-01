@@ -7,10 +7,15 @@ Accepted
 To ensure reliability, maintainability, and safe evolution of the platform, all features are developed using a test-driven, milestone-driven approach. Each vertical slice is committed with passing tests and updated documentation.
 
 ## Decision
+
 - All new features begin with a failing (red) test.
 - Implementation proceeds until the test passes (green).
 - Each milestone is committed with code, tests, and docs.
 - Documentation (README, roadmap, ADRs) is updated at each milestone.
+
+**Relevant code:**
+- Example unit test: [tests/unit/workflow/test_engine.py](../../tests/unit/workflow/test_engine.py)
+- Example integration test: [tests/integration/test_api.py](../../tests/integration/test_api.py)
 
 ## Consequences
 - High test coverage and confidence in changes.

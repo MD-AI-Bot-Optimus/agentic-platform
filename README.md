@@ -44,4 +44,31 @@ kre-agentic-platform/
 See the linked docs for detailed plans, architecture, and progress.
 This project is built to be integration-ready. As the platform matures, MCP, LangGraph, and n8n will be incorporated as adapters, ensuring the core remains stable, testable, and easy to extend. All progress and integration steps will be milestone-driven and documented.
 
+
+## Usage
+
+### CLI
+
+```
+python -m src.agentic_platform.cli demo_workflow.yaml demo_input.json
+```
+
+### REST API
+
+Start the API server:
+```
+uvicorn src.agentic_platform.api:app --reload
+```
+Run a workflow via API:
+```
+curl -F "workflow=@demo_workflow.yaml" -F "input_artifact=@demo_input.json" http://localhost:8000/run-workflow/
+```
+See docs/api.md for details.
+
+### Tests
+
+```
+pytest
+```
+
 Happy hacking!
