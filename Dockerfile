@@ -17,7 +17,8 @@ RUN pip install --no-cache-dir \
     google-cloud-vision>=3.0.0 \
     requests>=2.31.0 \
     pyyaml>=6.0 \
-    python-multipart>=0.0.6
+    python-multipart>=0.0.6 \
+    jsonschema>=4.0.0
 
 # Copy application code
 COPY src/ src/
