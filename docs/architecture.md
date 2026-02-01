@@ -21,9 +21,9 @@ This document describes the architecture, interfaces, and extension points of th
 
 ## Extension Points
 - **Model Selection:** Use ModelRouter to select and route tool calls to specific GPT/model per node/task
+- **Policy Enforcement:** Add tool/model allowlist (ToolAllowlistPolicy) and PII redaction (PiiRedactor) as middleware or node logic
 - **Adapters:** Add new adapters for MCP, LangGraph, n8n, S3, DB, etc. by implementing the relevant interface
 - **Nodes:** Add new node types to the workflow engine (e.g., human review, branching, custom tools)
-- **Policies:** Add policy enforcement (e.g., tool allowlist, PII redaction) as middleware or node logic
 - **Observability:** Plug in real audit/trace, metrics, and logging backends
 
 ## Design Principles

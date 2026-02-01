@@ -35,6 +35,8 @@ kre-agentic-platform/
 ## Status
 - Core logic, types, and interfaces implemented and fully tested
 - Model selection per node/task supported and tested (route tool calls to specific GPT/model as specified in workflow)
+- Policy enforcement (tool/model allowlist) supported and tested (ToolAllowlistPolicy)
+- PII redaction middleware supported and tested (PiiRedactor)
 - All external systems are mocked or abstracted behind interfaces
 - Milestone-driven, TDD-first development
 - Ready for incremental integration of MCP, LangGraph, n8n, and more

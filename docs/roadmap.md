@@ -67,10 +67,10 @@ This document details the incremental, test-driven development (TDD) roadmap for
 43. test: tool client interface can be swapped without changing engine
 44. refactor: introduce ToolClient protocol
 45. feat: add MCP adapter module (stubbed)
-46. test: policy enforcement blocks unauthorized tool call
-47. feat: implement tool allowlist policy
+46. test: policy enforcement blocks unauthorized tool/model call
+47. feat: implement tool/model allowlist policy (ToolAllowlistPolicy)
 48. test: PII redaction in audit logs
-49. feat: implement redaction middleware
+49. feat: implement PII redaction middleware (PiiRedactor)
 50. docs: ADR for tool contracts, audit, workflow DSL
 
 ---
