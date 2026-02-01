@@ -1,3 +1,5 @@
+## CLI Interface
+The platform provides a minimal CLI (`src/agentic_platform/cli.py`) for running workflows from YAML definitions and JSON input artifacts. This enables end-to-end testing and usage without code changes, and provides a foundation for future API or UI integration.
 # Architecture Overview
 
 This document describes the architecture, interfaces, and extension points of the Multi-AI Agentic Platform.

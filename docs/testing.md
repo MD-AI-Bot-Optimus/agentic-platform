@@ -1,3 +1,8 @@
+## CLI Testing
+You can run a workflow end-to-end from the command line:
+```sh
+PYTHONPATH=src .venv/bin/python src/agentic_platform/cli.py --workflow demo_workflow.yaml --input demo_input.json
+```
 # Testing Strategy
 
 This document describes the testing philosophy, coverage goals, and practical approach for the Multi-AI Agentic Platform.
