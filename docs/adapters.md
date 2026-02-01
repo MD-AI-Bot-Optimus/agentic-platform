@@ -18,6 +18,11 @@ This document describes the adapter pattern and current integrations for the Age
 - Configure with `{ "endpoint": "http://your-langgraph-endpoint" }` to enable real calls.
 - Used in CLI, API, and tests.
 
+## Adapter Selection (API & CLI)
+- The API `/run-workflow/` endpoint accepts an `adapter` form field (`mcp` or `langgraph`).
+- The CLI accepts `--adapter mcp` or `--adapter langgraph`.
+- This allows runtime selection of the backend for tool calls.
+
 ## Testing
 - See `tests/unit/adapters/test_mcp_adapter.py` and `tests/unit/adapters/test_langgraph_adapter.py` for adapter tests.
 - All adapters are covered by unit tests for both simulated and real (mocked) calls.

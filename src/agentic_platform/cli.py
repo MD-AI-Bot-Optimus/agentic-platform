@@ -3,12 +3,16 @@ import json
 import yaml
 from agentic_platform.workflow import engine
 from agentic_platform.audit.audit_log import InMemoryAuditLog
+
 from agentic_platform.adapters.mcp_adapter import MCPAdapter
+from agentic_platform.adapters.langgraph_adapter import LangGraphAdapter
+
 
 def main():
     parser = argparse.ArgumentParser(description="Run a workflow definition with input artifact.")
     parser.add_argument("--workflow", required=True, help="Path to workflow YAML definition")
     parser.add_argument("--input", required=True, help="Path to input artifact JSON")
+    parser.add_argument("--adapter", choices=["mcp", "langgraph"], default="mcp", help="Adapter to use (mcp or langgraph)")
     args = parser.parse_args()
 
     with open(args.workflow, "r") as wf_file:
@@ -17,7 +21,10 @@ def main():
         input_artifact = json.load(in_file)
 
     audit_log = InMemoryAuditLog()
-    tool_client = MCPAdapter()
+    if args.adapter == "langgraph":
+        tool_client = LangGraphAdapter()
+    else:
+        tool_client = MCPAdapter()
     result = engine.run(wf_def, input_artifact=input_artifact, tool_client=tool_client, audit_log=audit_log)
     print("Workflow result:")
     print(json.dumps(result, indent=2))
