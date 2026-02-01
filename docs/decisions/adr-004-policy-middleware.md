@@ -1,4 +1,4 @@
-# ADR-002: Policy Enforcement Middleware
+# ADR-004: Policy Enforcement Middleware
 
 ## Status
 Accepted

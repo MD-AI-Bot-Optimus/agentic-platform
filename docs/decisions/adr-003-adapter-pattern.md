@@ -1,4 +1,4 @@
-# ADR-001: Adapter Pattern for External Integrations
+# ADR-003: Adapter Pattern for External Integrations
 
 ## Status
 Accepted
