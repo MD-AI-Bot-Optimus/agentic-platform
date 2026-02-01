@@ -1,6 +1,9 @@
 ## CLI Interface
 The platform provides a minimal CLI (`src/agentic_platform/cli.py`) for running workflows from YAML definitions and JSON input artifacts. This enables end-to-end testing and usage without code changes, and provides a foundation for future API or UI integration.
+
 # Architecture Overview
+
+See [docs/adapters.md](adapters.md) for details on the adapter pattern and current integrations.
 
 This document describes the architecture, interfaces, and extension points of the Multi-AI Agentic Platform.
 
@@ -11,7 +14,7 @@ This document describes the architecture, interfaces, and extension points of th
 - **Tools:** Tool registry, tool protocol, fake tool client (for tests), **ModelRouter for model selection per node/task**
 - **Workflow:** Workflow definition parser, engine, state management
 - **Agents:** Agent registry, agent base classes
-- **Adapters:** All external integrations (MCP, LangGraph, n8n, DB, SaaS) are adapters implementing platform interfaces
+- **Adapters:** All external integrations (MCP, LangGraph, n8n, DB, SaaS) are adapters implementing platform interfaces. See [adapters.md](adapters.md).
 
 ## Key Interfaces (Ports)
 - `ToolClient`: `call(tool_name, args) -> result`

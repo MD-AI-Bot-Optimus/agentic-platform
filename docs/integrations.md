@@ -1,4 +1,7 @@
+
 # Integration Plan: MCP, LangGraph, n8n
+
+See [docs/adapters.md](adapters.md) for adapter implementation details and testing.
 
 This document details how the platform will incorporate real-world integrations as it matures, while keeping the core logic stable, testable, and decoupled from external systems.
 
@@ -25,6 +28,13 @@ This document details how the platform will incorporate real-world integrations 
 - **Security & Observability:** Ensure audit and traceability are preserved across boundaries.
 
 ## General Integration Principles
+
+### How to Add a New Adapter
+1. Create a new file in `src/agentic_platform/adapters/` (e.g., `my_adapter.py`).
+2. Implement the required interface (usually `call(tool_name, args)` for tool clients, or `put/get` for artifact stores).
+3. Add a unit test in `tests/unit/adapters/` for both simulated and real (mocked) calls.
+4. Update `docs/adapters.md` with a summary of the new adapter and its configuration.
+5. (Optional) Add integration tests and update the API/CLI to support the new adapter if needed.
 - **Adapters, Not Rewrites:** All integrations are added as new modules/classes that implement existing interfaces.
 - **Test Coverage:** Maintain high test coverage with mocks; add integration tests for each adapter.
 - **Configurable:** Use dependency injection or config files to select which implementation (fake, in-memory, MCP, LangGraph, n8n) is active.
