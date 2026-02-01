@@ -27,6 +27,9 @@ COPY sample_data/ sample_data/
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app/src
 
+# Test that imports work
+RUN python -c "import sys; sys.path.insert(0, '/app/src'); from agentic_platform.api import app; print('✓ App imports successfully')"
+
 # Run the application - use shell form to expand PORT variable
 # Cloud Run automatically sets PORT to 8080
 CMD sh -c 'python -m uvicorn src.agentic_platform.api:app --host 0.0.0.0 --port ${PORT:-8080}'
