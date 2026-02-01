@@ -19,10 +19,6 @@ COPY sample_data/ sample_data/
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8080}/docs || exit 1
-
 # Run the application - use shell form to expand PORT variable
 # Cloud Run automatically sets PORT to 8080
 CMD sh -c 'python -m uvicorn src.agentic_platform.api:app --host 0.0.0.0 --port ${PORT:-8080}'

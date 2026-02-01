@@ -41,6 +41,8 @@ steps:
       - '2'
       - '--timeout'
       - '3600'
+      - '--max-instances'
+      - '10'
       - '--allow-unauthenticated'
       - '--set-env-vars'
       - 'PYTHONUNBUFFERED=1'
