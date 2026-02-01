@@ -18,11 +18,11 @@ COPY sample_data/ sample_data/
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
-ENV PORT=8002
+ENV PORT=8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8002/docs')"
+    CMD python -c "import requests; requests.get('http://localhost:${PORT}/docs')" || exit 1
 
-# Run the application
-CMD ["uvicorn", "src.agentic_platform.api:app", "--host", "0.0.0.0", "--port", "8002"]
+# Run the application - read PORT from environment variable
+CMD ["sh", "-c", "uvicorn src.agentic_platform.api:app --host 0.0.0.0 --port ${PORT:-8080}"]
