@@ -19,6 +19,7 @@ This project is a modular, test-driven platform for orchestrating multi-agent wo
 - [Integration Plan: MCP, LangGraph, n8n](docs/integrations.md)
 - [Architecture Overview](docs/architecture.md)
 - [Testing Strategy](docs/testing.md)
+- [Cloud Run Deployment](docs/CLOUD_RUN_DEPLOYMENT.md)
 - [Architectural Decision Records (ADRs)](docs/decisions/)
 
 ## Features
