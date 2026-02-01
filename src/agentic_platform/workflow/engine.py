@@ -56,7 +56,6 @@ def run(wf_def, input_artifact, tool_client, audit_log, stop_at_node=None, retur
             raise RuntimeError(f"No valid outgoing edge from node {current['id']} for input {input_artifact}")
         next_node = node_map[next_edge["to"]]
         if next_node["type"] == "tool":
-            tool_client.call(next_node["tool"], {})
             audit_log.emit(AuditEvent(
                 event_type="STEP_STARTED",
                 job_id=job_id,
@@ -64,13 +63,24 @@ def run(wf_def, input_artifact, tool_client, audit_log, stop_at_node=None, retur
                 timestamp="2026-01-31T00:00:01Z",
                 status="started"
             ))
-            audit_log.emit(AuditEvent(
-                event_type="STEP_ENDED",
-                job_id=job_id,
-                node_id=next_node["id"],
-                timestamp="2026-01-31T00:00:02Z",
-                status="ended"
-            ))
+            try:
+                tool_client.call(next_node["tool"], {})
+                audit_log.emit(AuditEvent(
+                    event_type="STEP_ENDED",
+                    job_id=job_id,
+                    node_id=next_node["id"],
+                    timestamp="2026-01-31T00:00:02Z",
+                    status="ended"
+                ))
+            except Exception as e:
+                audit_log.emit(AuditEvent(
+                    event_type="STEP_ERRORED",
+                    job_id=job_id,
+                    node_id=next_node["id"],
+                    timestamp="2026-01-31T00:00:02Z",
+                    status="errored"
+                ))
+                raise
         current = next_node
     status = "completed"
     audit_log.emit(AuditEvent(

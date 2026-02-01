@@ -16,6 +16,7 @@ This document describes the testing philosophy, coverage goals, and practical ap
   - Validate contracts between modules and with real or stubbed adapters
   - Example: integration test for workflow engine with stubbed adapter and audit log
   - Example: integration test for branching workflow (conditional edges)
+  - Example: integration test for error handling (adapter failure, audit log error event)
   - Located in `tests/integration/`
 - **End-to-End (E2E) Tests:**
   - Planned for full workflow execution, including CLI and real integrations

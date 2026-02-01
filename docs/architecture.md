@@ -21,6 +21,7 @@ This document describes the architecture, interfaces, and extension points of th
 
 - **Model Selection:** Use ModelRouter to select and route tool calls to specific GPT/model per node/task
 - **Policy Enforcement:** Add tool/model allowlist (ToolAllowlistPolicy) and PII redaction (PiiRedactor) as middleware or node logic
+- **Error Handling & Observability:** The workflow engine emits STEP_STARTED before tool calls and STEP_ERRORED if a tool call fails, ensuring robust audit logging and traceability for all workflow runs.
 - **Adapters:** Add new adapters for MCP, LangGraph, n8n, S3, DB, SaaS, etc. by implementing the relevant interface. Integration tests validate adapter contracts (see integration test for workflow engine with stubbed adapter). Real adapters (e.g., MCP, SaaS) can return simulated or real responses.
 - **Nodes:** Add new node types to the workflow engine (e.g., human review, branching, custom tools)
 - **Observability:** Plug in real audit/trace, metrics, and logging backends
