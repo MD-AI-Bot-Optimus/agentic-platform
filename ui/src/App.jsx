@@ -434,11 +434,14 @@ function App() {
                         <Box sx={{ mt: 2 }}>
                           <Typography variant="subtitle2" fontWeight={600}>Reasoning Steps ({agentResult.reasoning_steps.length})</Typography>
                           <Box sx={{ background: '#f6f8fa', borderRadius: 1, p: 2, fontSize: '0.85rem', fontFamily: 'monospace', maxHeight: '200px', overflowY: 'auto' }}>
-                            {agentResult.reasoning_steps.map((step, idx) => (
-                              <div key={idx} style={{ marginBottom: '8px', paddingBottom: '8px', borderBottom: '1px solid #e0e0e0' }}>
-                                <span style={{ color: '#667eea', fontWeight: 600 }}>Step {idx + 1}:</span> {step.substring(0, 100)}...
-                              </div>
-                            ))}
+                            {agentResult.reasoning_steps.map((step, idx) => {
+                              const stepText = typeof step === 'string' ? step : JSON.stringify(step);
+                              return (
+                                <div key={idx} style={{ marginBottom: '8px', paddingBottom: '8px', borderBottom: '1px solid #e0e0e0', wordBreak: 'break-word' }}>
+                                  <span style={{ color: '#667eea', fontWeight: 600 }}>Step {idx + 1}:</span> {stepText.length > 100 ? stepText.substring(0, 100) + '...' : stepText}
+                                </div>
+                              );
+                            })}
                           </Box>
                         </Box>
                       )}

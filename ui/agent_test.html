@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LangGraph Agent Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; }
+        .form-group { margin: 15px 0; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; }
+        button { background: #667eea; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #5568d3; }
+        .result { background: #f0f0f0; padding: 15px; margin-top: 20px; border-radius: 4px; white-space: pre-wrap; font-family: monospace; }
+        .error { background: #fee; color: #c33; padding: 10px; border-radius: 4px; margin-top: 10px; }
+        .success { background: #efe; color: #3c3; padding: 10px; border-radius: 4px; margin-top: 10px; }
+        .loading { display: none; }
+    </style>
+</head>
+<body>
+    <h1>🤖 LangGraph Agent Test</h1>
+    
+    <form id="agentForm">
+        <div class="form-group">
+            <label for="prompt">Prompt:</label>
+            <textarea id="prompt" rows="4" required>What is artificial intelligence?</textarea>
+        </div>
+        
+        <div class="form-group">
+            <label for="model">Model:</label>
+            <select id="model">
+                <option value="mock-llm">Mock LLM (Free)</option>
+                <option value="claude-3.5-sonnet">Claude 3.5 Sonnet</option>
+                <option value="gpt-4">GPT-4</option>
+            </select>
+        </div>
+        
+        <button type="submit" id="submitBtn">Execute Agent</button>
+        <span class="loading" id="loading">⏳ Loading...</span>
+    </form>
+    
+    <div id="output"></div>
+    
+    <script>
+        document.getElementById('agentForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const prompt = document.getElementById('prompt').value;
+            const model = document.getElementById('model').value;
+            const submitBtn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loading');
+            const output = document.getElementById('output');
+            
+            submitBtn.disabled = true;
+            loading.style.display = 'inline';
+            output.innerHTML = '';
+            
+            try {
+                const formData = new FormData();
+                formData.append('prompt', prompt);
+                formData.append('model', model);
+                
+                const response = await fetch('/agent/execute', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                let html = '<div class="result">';
+                html += '<strong>Status:</strong> ' + data.status + '\n';
+                html += '<strong>Iterations:</strong> ' + data.iterations + '\n\n';
+                html += '<strong>Final Output:</strong>\n' + data.final_output + '\n\n';
+                
+                if (data.reasoning_steps && data.reasoning_steps.length > 0) {
+                    html += '<strong>Reasoning Steps (' + data.reasoning_steps.length + '):</strong>\n';
+                    data.reasoning_steps.forEach((step, i) => {
+                        html += 'Step ' + (i + 1) + ': ' + step + '\n';
+                    });
+                }
+                
+                if (data.tool_calls && data.tool_calls.length > 0) {
+                    html += '\n<strong>Tools Used:</strong> ' + data.tool_calls.map(c => c.tool).join(', ');
+                }
+                
+                if (data.error) {
+                    html += '\n<strong>Error:</strong> ' + data.error;
+                }
+                
+                html += '</div>';
+                output.innerHTML = '<div class="success">✅ Agent executed successfully</div>' + html;
+                
+            } catch (error) {
+                output.innerHTML = '<div class="error">❌ Error: ' + error.message + '</div>';
+            } finally {
+                submitBtn.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
