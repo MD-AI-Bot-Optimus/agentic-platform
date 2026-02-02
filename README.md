@@ -1,264 +1,266 @@
+# 🤖 Agentic Platform
 
+A production-ready, test-driven platform for building multi-agent workflows with full Model Context Protocol (MCP) support, tool orchestration, and audit trails.
 
-# Multi-AI Agentic Platform (MVP)
+**🌐 Live Demo:** https://agentic-platform-api-7erqohmwxa-uc.a.run.app/
 
-## Overview
-This project is a modular, test-driven platform for orchestrating multi-agent workflows, designed for easy integration with external systems (MCP, LangGraph, n8n, DB, SaaS) via adapters. All core logic is decoupled from integrations and fully tested.
+## ✨ Current Status
 
-## Current Status ✅
-- **Phase 7 Complete:** MCP Server Integration with 57 passing tests
-- **Core Features:** Workflow engine, audit trails, OCR integration, MCP protocol support
-- **Modern UI:** React with Material-UI, 2-column responsive layout, Highway 1 background
-- **API:** FastAPI with OCR, workflow execution, and MCP endpoints
-- **Documentation:** Complete ADRs, MCP guide, API docs, testing strategy
+- ✅ **Phase 7:** MCP Server Integration with 57 passing tests
+- ✅ **Production:** Deployed to Google Cloud Run with auto-scaling
+- ✅ **Modern UI:** Live React dashboard with Material-UI
+- ✅ **Complete:** Full documentation, API reference, ADRs
 
-## Quick Links
-- [Roadmap & TDD Commit History](docs/roadmap.md)
-- [MCP Implementation Guide](docs/mcp-guide.md)
-- [API Documentation](docs/api.md)
-- [Integration Plan: MCP, LangGraph, n8n](docs/integrations.md)
-- [Architecture Overview](docs/architecture.md)
-- [Testing Strategy](docs/testing.md)
-- [Cloud Run Deployment](docs/CLOUD_RUN_DEPLOYMENT.md)
-- [Architectural Decision Records (ADRs)](docs/decisions/)
+## 📚 Documentation
 
-## Features
-✅ **Workflow Engine** - YAML-based workflow definitions with conditional branching  
-✅ **Audit Trail** - Immutable audit logs with full correlation tracking  
-✅ **OCR Integration** - Google Cloud Vision API with formatted output  
-✅ **MCP Protocol** - JSON-RPC 2.0 server and client implementation  
-✅ **Tool Registry** - Pluggable tool system with discovery  
-✅ **Model Selection** - Route tool calls to specific models per task  
-✅ **Policy Enforcement** - Tool and model allowlist policies  
-✅ **PII Redaction** - Middleware for sensitive data redaction  
-✅ **Modern React UI** - Responsive dashboard with Material-UI  
-✅ **FastAPI Backend** - Production-ready REST API  
+| Document | Description |
+|----------|-------------|
+| [**MCP.md**](docs/MCP.md) | Model Context Protocol implementation & integration guide |
+| [**API.md**](docs/api.md) | REST API reference for all endpoints |
+| [**Architecture.md**](docs/architecture.md) | System design and component overview |
+| [**Adapters.md**](docs/adapters.md) | Tool registry and adapter patterns |
+| [**Testing.md**](docs/testing.md) | Testing strategy and test coverage |
+| [**Roadmap.md**](docs/roadmap.md) | TDD milestone history and project roadmap |
+| [**Decisions**](docs/decisions/) | Architecture Decision Records (ADRs 1-10) |
 
-## Quickstart (Modern UI & API)
+## 🚀 Quick Start
 
-### Prerequisites
-- Python 3.12+
-- Node.js 18+
-- Google Cloud SDK (for OCR)
+### Try Live Demo
+Visit: **https://agentic-platform-api-7erqohmwxa-uc.a.run.app/**
 
-### 1. Clone and Start Everything
+- Use OCR demo to extract text from images
+- Test MCP tools with JSON arguments
+- Run workflows and see results
 
-```sh
+### Local Development
+
+```bash
+# Clone
 git clone <repo-url>
 cd agentic-platform
+
+# Start everything (requires Python 3.12+, Node.js 18+)
 chmod +x start_all.sh
 ./start_all.sh
+
+# Access:
+# - UI: http://localhost:5173
+# - API: http://localhost:8000
+# - Docs: http://localhost:8000/docs
 ```
 
-This will start:
-- **Backend API** (FastAPI) on http://localhost:8002
-- **Frontend UI** (React/Material-UI) on http://localhost:5173
+### Docker
 
-### 2. Using the Modern UI
-
-Open **http://localhost:5173** in your browser to access:
-- **OCR Demo** - Upload images for text extraction
-- **MCP Tool Tester** - Test any registered MCP tool with JSON arguments
-- **Workflow Runner** - Execute custom YAML workflows
-- **Results Dashboard** - View workflow results, tool outputs, and audit logs
-
-**UI Features:**
-- 2-column responsive grid layout
-- Highway 1 Pacific Coast background imagery
-- Sticky header for easy navigation
-- Real-time workflow execution with JSON response display
-
-### 3. Using the CLI
-
-```sh
-python -m src.agentic_platform.cli demo_workflow.yaml demo_input.json
+```bash
+docker build -t agentic-platform .
+docker run -p 8080:8080 agentic-platform
+# Visit http://localhost:8080
 ```
 
-### 4. Using the API
+## 🛠️ API Endpoints
 
-Start the API server:
-```sh
-PYTHONPATH=src uvicorn src.agentic_platform.api:app --reload --port 8002
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/` | Welcome page |
+| GET | `/docs` | Interactive API docs |
+| GET | `/mcp/tools` | List all MCP tools |
+| POST | `/mcp/request` | Call a tool (JSON-RPC 2.0) |
+| POST | `/run-ocr/` | Extract text from image |
+| POST | `/run-workflow/` | Execute workflow |
+
+### Example: OCR
+
+```bash
+curl -X POST https://agentic-platform-api-7erqohmwxa-uc.a.run.app/run-ocr/ \
+  -F "image=@document.jpg"
 ```
 
-**OCR Example:**
-```sh
-curl -X POST http://localhost:8002/run-ocr/ \
-  -F "image=@sample_data/letter.jpg"
-```
+### Example: MCP Tool Call
 
-**Workflow Example:**
-```sh
-curl -F "workflow=@demo_workflow.yaml" \
-     -F "input_artifact=@demo_input.json" \
-     http://localhost:8002/run-workflow/
-```
-
-**MCP Tools Discovery:**
-```sh
-curl http://localhost:8002/mcp/tools | jq
-```
-
-**MCP Tool Call:**
-```sh
-curl -X POST http://localhost:8002/mcp/request \
+```bash
+curl -X POST https://agentic-platform-api-7erqohmwxa-uc.a.run.app/mcp/request \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
     "method": "tools/call",
     "params": {
       "name": "google_vision_ocr",
-      "arguments": {"image_path": "sample_data/letter.jpg"}
+      "arguments": {"image_path": "image.jpg"}
     },
     "id": 1
   }'
 ```
 
-See [docs/api.md](docs/api.md) for detailed API documentation.
+## 🏗️ Architecture
 
-### 5. Running Tests
-
-```sh
-# All tests
-pytest
-
-# Unit tests only
-pytest tests/unit
-
-# Integration tests only
-pytest tests/integration
-
-# Specific test file
-pytest tests/unit/adapters/test_mcp_server.py
+```
+┌─────────────────────────────────────┐
+│   UI (React + Material-UI)          │
+│   - OCR Demo                        │
+│   - MCP Tool Tester                 │
+│   - Workflow Runner                 │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+┌─────────────────────────────────────┐
+│  FastAPI Backend                    │
+│  - REST Endpoints                   │
+│  - MCP Server (JSON-RPC 2.0)        │
+│  - OCR Workflow Integration         │
+└──────────────┬──────────────────────┘
+               │
+      ┌────────┴────────┐
+      ▼                 ▼
+┌───────────────┐ ┌──────────────┐
+│ Workflow      │ │ Tool         │
+│ Engine        │ │ Registry     │
+└───────────────┘ └──────────────┘
+      │                  │
+      ▼                  ▼
+┌──────────────────────────────────────┐
+│ Adapters & Tools                     │
+│ - MCP Adapter                        │
+│ - Google Vision OCR                  │
+│ - Policy Middleware                  │
+│ - Audit Trail                        │
+└──────────────────────────────────────┘
 ```
 
----
-
-## Repository Structure
+## 📦 Structure
 
 ```
 agentic-platform/
-├── README.md
-├── pyproject.toml
-├── pytest.ini
-├── start_all.sh
-├── docs/
-│   ├── roadmap.md              # TDD milestone history
-│   ├── mcp-guide.md            # MCP implementation details
-│   ├── api.md                  # API reference
-│   ├── architecture.md         # System design
-│   ├── adapters.md             # Adapter system
-│   ├── integrations.md         # Integration plan
-│   ├── testing.md              # Testing strategy
-│   └── decisions/              # ADRs (Architecture Decision Records)
-├── src/
-│   └── agentic_platform/
-│       ├── __init__.py
-│       ├── api.py              # FastAPI application
-│       ├── cli.py              # CLI runner
-│       ├── core/               # Core types and utilities
-│       ├── agents/             # Agent implementations
-│       ├── audit/              # Audit trail system
-│       ├── tools/              # Tool registry and middleware
-│       ├── workflow/           # Workflow engine
-│       └── adapters/           # MCP, LangGraph, etc.
-├── tests/
-│   ├── unit/                   # Unit tests
-│   │   ├── adapters/
-│   │   ├── agents/
-│   │   ├── audit/
-│   │   ├── core/
-│   │   ├── tools/
-│   │   └── workflow/
-│   └── integration/            # Integration tests
-├── ui/
-│   ├── README.md
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── public/                 # Static assets
-│   │   └── magicalmajestichighway1.jpg
-│   └── src/
-│       ├── App.jsx             # Main React app
-│       ├── index.html
-│       └── main.jsx
-└── sample_data/                # Test images
-    ├── letter.jpg
-    ├── handwriting.jpg
-    ├── numbers_gs150.jpg
-    └── stock_gs200.jpg
+├── src/agentic_platform/
+│   ├── api.py           # FastAPI app
+│   ├── workflow/        # Workflow engine
+│   ├── tools/           # Tool registry & policies
+│   ├── adapters/        # MCP, LangGraph, integrations
+│   ├── audit/           # Audit logging
+│   └── agents/          # Agent implementations
+├── ui/                  # React frontend
+├── tests/               # 57+ tests (unit + integration)
+├── docs/                # Complete documentation
+└── deploy/              # Cloud Run configuration
 ```
 
----
+## ✅ Features
 
-## Development Workflow
+- **Workflow Engine** - YAML-based workflows with branching
+- **MCP Protocol** - Full JSON-RPC 2.0 compliance
+- **OCR** - Google Vision API integration
+- **Tool Registry** - Pluggable tool discovery system
+- **Audit Trails** - Immutable event logging
+- **Policy Enforcement** - Tool & model allowlists
+- **Modern UI** - Responsive React dashboard
+- **Production Ready** - Docker, Cloud Run, auto-scaling
+- **57+ Tests** - Comprehensive test coverage
+- **Full Documentation** - API, architecture, decisions
 
-### Adding a New Tool
+## 🧪 Testing
 
-1. Implement tool in `src/agentic_platform/tools/`
-2. Register in `ToolRegistry`
-3. Add unit tests in `tests/unit/tools/`
-4. MCP endpoint will auto-discover it via `/mcp/tools`
+```bash
+# All tests
+pytest -v
 
-### Creating a Workflow
+# With coverage
+pytest --cov=src tests/
 
-1. Define YAML with nodes and edges:
-   ```yaml
-   nodes:
-     - id: ocr_step
-       tool: google_vision_ocr
-       params: { image_path: "image.jpg" }
-   edges:
-     - from: ocr_step
-       to: process_step
-   ```
-
-2. Submit via UI, CLI, or API
-
-### Integration with External Systems
-
-All integrations use the adapter pattern:
-- `MCPAdapter` - JSON-RPC 2.0 protocol for tool discovery
-- `LangGraphAdapter` - Graph-based workflow orchestration  
-- More adapters coming (n8n, custom systems)
-
----
-
-## Testing
-
-- **Unit Tests:** 50+ tests for core logic, adapters, agents
-- **Integration Tests:** 13+ tests for end-to-end workflows and OCR
-- **MCP Tests:** 22 MCPServer + 22 MCPAdapter + 13 E2E = 57 total
-- **Coverage:** Core logic has >90% coverage
-
-Run tests:
-```sh
-pytest
-pytest --cov=src/agentic_platform
+# Watch mode
+pytest-watch
 ```
 
+**Status:** 57 tests passing ✅
+
+## 🔧 Technologies
+
+- **Backend:** Python 3.12, FastAPI, Pydantic v2
+- **Frontend:** React 18, Material-UI 5, Vite
+- **Cloud:** Google Cloud Run, Cloud Build
+- **Standards:** JSON-RPC 2.0, OpenAPI 3.0, MCP 1.0
+- **Testing:** pytest, pytest-cov
+
+## 🚢 Deployment
+
+Automatic deployment to Google Cloud Run on every GitHub push.
+
+**Current Deployment:**
+- URL: https://agentic-platform-api-7erqohmwxa-uc.a.run.app/
+- Region: us-central1
+- Memory: 512Mi
+- Status: ✅ Live
+
+See [Deployment Guide](docs/DEPLOYMENT.md) for details.
+
+## 🔐 Security
+
+- Immutable audit trails for compliance
+- PII redaction middleware
+- CORS protection
+- Input validation
+- Token-based auth (extensible)
+
+## 📈 Roadmap
+
+| Phase | Status | Goals |
+|-------|--------|-------|
+| 7 | ✅ Done | MCP Server, Tool Registry |
+| 8 | 🔄 In Progress | UI improvements, perf tuning |
+| 9 | 📋 Planned | LangGraph adapter |
+| 10 | 📋 Planned | n8n integration |
+| 11 | 📋 Planned | Database artifact storage |
+
+See [Roadmap.md](docs/roadmap.md) for full TDD history.
+
+## 🤝 Integration Examples
+
+### Python
+```python
+import requests
+
+response = requests.post(
+    'https://agentic-platform-api-7erqohmwxa-uc.a.run.app/mcp/request',
+    json={
+        'jsonrpc': '2.0',
+        'method': 'tools/call',
+        'params': {
+            'name': 'google_vision_ocr',
+            'arguments': {'image_path': 'doc.jpg'}
+        },
+        'id': 1
+    }
+)
+print(response.json())
+```
+
+### Node.js
+```javascript
+const response = await fetch(
+  'https://agentic-platform-api-7erqohmwxa-uc.a.run.app/mcp/request',
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      method: 'tools/call',
+      params: {
+        name: 'google_vision_ocr',
+        arguments: { image_path: 'doc.jpg' }
+      },
+      id: 1
+    })
+  }
+);
+```
+
+### Claude (Future)
+```bash
+claude --mcp https://agentic-platform-api-7erqohmwxa-uc.a.run.app
+```
+
+## 📄 License
+
+MIT
+
 ---
 
-## Documentation
-
-All documentation is in `docs/`:
-- **Roadmap** - Phase-by-phase development history (TDD)
-- **MCP Guide** - Detailed MCP server and protocol implementation
-- **API Docs** - Full REST API reference with examples
-- **Architecture** - System design, patterns, and principles
-- **ADRs** - Architectural decision records for major choices
-- **Testing** - Test strategy, fixtures, and patterns
-
----
-
-## Next Steps
-
-1. **Phase 8 - LangGraph Integration** - Graph-based workflow orchestration
-2. **Phase 9 - n8n Integration** - Visual workflow builder
-3. **Phase 10 - Database Artifact Store** - Persistent storage layer
-4. **Phase 11 - Advanced Policies** - Role-based access control, rate limiting
-
----
-
-## Support & Contributing
-
-For issues, questions, or contributions, please refer to the documentation in `docs/` and the inline code comments. The codebase follows TDD principles and is fully documented.
+**Built with ❤️ for AI-powered automation** | [Live Demo](https://agentic-platform-api-7erqohmwxa-uc.a.run.app/) | [Docs](docs/)
