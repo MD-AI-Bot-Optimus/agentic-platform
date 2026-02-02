@@ -333,6 +333,7 @@ async def execute_agent(prompt: str = Form(...), model: str = Form("mock-llm")):
     Query parameters:
     - prompt: User query for the agent
     - model: LLM model to use (default: mock-llm for cost-free demo)
+             Options: mock-llm, claude-3.5-sonnet, gpt-4-turbo, gemini-1.5-pro
     
     Returns:
     - status: success/incomplete/error
@@ -343,12 +344,24 @@ async def execute_agent(prompt: str = Form(...), model: str = Form("mock-llm")):
     """
     try:
         from agentic_platform.adapters.langgraph_agent import LangGraphAgent
-        from agentic_platform.llm.mock_llm import MockLLM
+        from agentic_platform.llm import get_llm_model, LLMConfig, validate_llm_setup
         
         logger.info(f"Agent execution request: model={model}, prompt length={len(prompt)}")
         
-        # Initialize agent with mock LLM
-        llm = MockLLM(model=model)
+        # Validate LLM setup
+        setup_status = validate_llm_setup()
+        logger.debug(f"LLM setup status: {setup_status}")
+        
+        # Get the appropriate LLM based on model parameter
+        try:
+            llm = get_llm_model(model=model)
+            logger.info(f"Initialized LLM: {model}")
+        except ValueError as e:
+            logger.warning(f"Could not initialize real LLM ({model}): {str(e)}, falling back to mock LLM")
+            from agentic_platform.llm.mock_llm import MockLLM
+            llm = MockLLM(model=model)
+        
+        # Initialize agent with the selected LLM
         agent = LangGraphAgent(
             model=model,
             llm=llm,
@@ -360,13 +373,23 @@ async def execute_agent(prompt: str = Form(...), model: str = Form("mock-llm")):
         
         logger.info(f"Agent execution complete: status={result.status}, iterations={result.iterations}")
         
+        # Convert LLMProvider enum to string for JSON serialization
+        api_keys_status = {k: v for k, v in setup_status["api_keys_configured"].items()}
+        
         return JSONResponse({
             "status": result.status,
             "final_output": result.final_output,
             "reasoning_steps": result.reasoning_steps,
             "iterations": result.iterations,
             "tool_calls": result.tool_calls,
-            "error": result.error
+            "error": result.error,
+            "model_used": model,
+            "llm_setup": {
+                "use_mock_llm": setup_status["use_mock_llm"],
+                "api_keys_configured": api_keys_status,
+                "default_model": setup_status["default_model"][1],  # Get model name from tuple
+                "available_models": setup_status["available_models"]
+            }
         })
         
     except Exception as e:
@@ -374,6 +397,37 @@ async def execute_agent(prompt: str = Form(...), model: str = Form("mock-llm")):
         raise HTTPException(
             status_code=500,
             detail=f"Agent execution failed: {str(e)}"
+        )
+
+
+@app.get("/agent/models")
+async def list_agent_models():
+    """
+    List available LLM models for agent.
+    
+    Returns:
+    - available_models: Dict mapping providers to model lists
+    - api_keys_configured: Dict showing which providers have API keys
+    """
+    try:
+        from agentic_platform.llm import list_available_models, LLMConfig
+        
+        models = list_available_models()
+        keys_status = LLMConfig.validate_api_keys()
+        
+        logger.info("Listing available agent models")
+        
+        return JSONResponse({
+            "available_models": models,
+            "api_keys_configured": keys_status,
+            "default_model": LLMConfig.get_default_model()[1]
+        })
+        
+    except Exception as e:
+        logger.error(f"Failed to list models: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to list models: {str(e)}"
         )
 
 
