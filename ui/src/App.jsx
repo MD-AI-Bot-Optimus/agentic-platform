@@ -188,109 +188,93 @@ function App() {
 
       {/* Main Content Area with Sidebar */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden', zIndex: 3 }}>
-        {/* Left Sidebar Navigation - Modern Icon-Only */}
+        {/* Left Sidebar Navigation - Text Labels */}
         <Paper sx={{
-          width: '90px',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          boxShadow: '8px 0 24px rgba(102, 126, 234, 0.3)',
+          width: '200px',
+          background: 'rgba(0, 0, 0, 0.4)',
+          boxShadow: '4px 0 12px rgba(0, 0, 0, 0.2)',
           overflowY: 'auto',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
-          pt: 3,
-          gap: 1
+          pt: 2,
+          gap: 0,
+          borderRadius: 0
         }}>
-          {/* Navigation Icons */}
+          {/* Navigation Items */}
           <Box
             onClick={() => setActiveView('ocr')}
             sx={{
-              fontSize: '32px',
               cursor: 'pointer',
-              padding: '16px',
-              borderRadius: '12px',
+              padding: '16px 20px',
               transition: 'all 0.3s ease',
-              background: activeView === 'ocr' ? 'rgba(255,255,255,0.3)' : 'transparent',
-              border: activeView === 'ocr' ? '2px solid rgba(255,255,255,0.8)' : '2px solid transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              background: activeView === 'ocr' ? 'rgba(255,255,255,0.15)' : 'transparent',
+              borderLeft: activeView === 'ocr' ? '4px solid #fff' : '4px solid transparent',
+              color: '#fff',
+              fontSize: '0.95rem',
+              fontWeight: activeView === 'ocr' ? 600 : 500,
               '&:hover': {
-                background: 'rgba(255,255,255,0.2)',
-                transform: 'scale(1.1)'
+                background: 'rgba(255,255,255,0.1)',
               }
             }}
-            title="OCR Demo"
           >
-            📷
+            📷 OCR Demo
           </Box>
 
           <Box
             onClick={() => setActiveView('mcp')}
             sx={{
-              fontSize: '32px',
               cursor: 'pointer',
-              padding: '16px',
-              borderRadius: '12px',
+              padding: '16px 20px',
               transition: 'all 0.3s ease',
-              background: activeView === 'mcp' ? 'rgba(255,255,255,0.3)' : 'transparent',
-              border: activeView === 'mcp' ? '2px solid rgba(255,255,255,0.8)' : '2px solid transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              background: activeView === 'mcp' ? 'rgba(255,255,255,0.15)' : 'transparent',
+              borderLeft: activeView === 'mcp' ? '4px solid #fff' : '4px solid transparent',
+              color: '#fff',
+              fontSize: '0.95rem',
+              fontWeight: activeView === 'mcp' ? 600 : 500,
               '&:hover': {
-                background: 'rgba(255,255,255,0.2)',
-                transform: 'scale(1.1)'
+                background: 'rgba(255,255,255,0.1)',
               }
             }}
-            title="MCP Tools"
           >
-            🔧
+            🔧 MCP Tools
           </Box>
 
           <Box
             onClick={() => setActiveView('agent')}
             sx={{
-              fontSize: '32px',
               cursor: 'pointer',
-              padding: '16px',
-              borderRadius: '12px',
+              padding: '16px 20px',
               transition: 'all 0.3s ease',
-              background: activeView === 'agent' ? 'rgba(255,255,255,0.3)' : 'transparent',
-              border: activeView === 'agent' ? '2px solid rgba(255,255,255,0.8)' : '2px solid transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              background: activeView === 'agent' ? 'rgba(255,255,255,0.15)' : 'transparent',
+              borderLeft: activeView === 'agent' ? '4px solid #fff' : '4px solid transparent',
+              color: '#fff',
+              fontSize: '0.95rem',
+              fontWeight: activeView === 'agent' ? 600 : 500,
               '&:hover': {
-                background: 'rgba(255,255,255,0.2)',
-                transform: 'scale(1.1)'
+                background: 'rgba(255,255,255,0.1)',
               }
             }}
-            title="LLM Agent"
           >
-            🤖
+            🤖 LLM Agent
           </Box>
 
           <Box
             onClick={() => setActiveView('workflow')}
             sx={{
-              fontSize: '32px',
               cursor: 'pointer',
-              padding: '16px',
-              borderRadius: '12px',
+              padding: '16px 20px',
               transition: 'all 0.3s ease',
-              background: activeView === 'workflow' ? 'rgba(255,255,255,0.3)' : 'transparent',
-              border: activeView === 'workflow' ? '2px solid rgba(255,255,255,0.8)' : '2px solid transparent',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              background: activeView === 'workflow' ? 'rgba(255,255,255,0.15)' : 'transparent',
+              borderLeft: activeView === 'workflow' ? '4px solid #fff' : '4px solid transparent',
+              color: '#fff',
+              fontSize: '0.95rem',
+              fontWeight: activeView === 'workflow' ? 600 : 500,
               '&:hover': {
-                background: 'rgba(255,255,255,0.2)',
-                transform: 'scale(1.1)'
+                background: 'rgba(255,255,255,0.1)',
               }
             }}
-            title="Workflow"
           >
-            ⚙️
+            ⚙️ Workflow
           </Box>
         </Paper>
 
