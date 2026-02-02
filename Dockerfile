@@ -29,8 +29,13 @@ RUN pip install --no-cache-dir \
     python-multipart>=0.0.6 \
     jsonschema>=4.0.0 \
     httpx>=0.24.0 \
+    langchain>=0.1.0 \
+    langchain-core>=0.1.0 \
+    langchain-anthropic>=0.1.0 \
+    langchain-openai>=0.1.0 \
+    langchain-google-vertexai>=0.1.0 \
     langgraph>=0.1.0 \
-    langchain>=0.1.0
+    python-dotenv>=1.0.0
 
 # Copy application code
 COPY src/ src/
