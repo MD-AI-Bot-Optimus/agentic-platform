@@ -1,0 +1,19 @@
+As of Cloud SDK 492.0.0 release, new functions will be deployed as 2nd gen functions by default. This is equivalent to currently deploying new with the --gen2 flag. Existing 1st gen functions will not be impacted and will continue to deploy as 1st gen functions.
+You can disable this behavior by explicitly specifying the --no-gen2 flag or by setting the functions/gen2 config property to 'off'.
+To learn more about the differences between 1st gen and 2nd gen functions, visit:
+https://cloud.google.com/functions/docs/concepts/version-comparison
+API [cloudfunctions.googleapis.com] not enabled on project [agentic-platfrom].
+ Would you like to enable and retry (this will take a few minutes)? (y/N)?  
+ERROR: (gcloud.functions.deploy) PERMISSION_DENIED: Cloud Functions API has not been used in project agentic-platfrom before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/cloudfunctions.googleapis.com/overview?project=agentic-platfrom then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry. This command is authenticated as manish.dube@gmail.com which is the active account specified by the [core/account] property.
+Cloud Functions API has not been used in project agentic-platfrom before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/cloudfunctions.googleapis.com/overview?project=agentic-platfrom then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.
+Google developers console API activation
+https://console.developers.google.com/apis/api/cloudfunctions.googleapis.com/overview?project=agentic-platfrom
+- '@type': type.googleapis.com/google.rpc.ErrorInfo
+  domain: googleapis.com
+  metadata:
+    activationUrl: https://console.developers.google.com/apis/api/cloudfunctions.googleapis.com/overview?project=agentic-platfrom
+    consumer: projects/agentic-platfrom
+    containerInfo: agentic-platfrom
+    service: cloudfunctions.googleapis.com
+    serviceTitle: Cloud Functions API
+  reason: SERVICE_DISABLED

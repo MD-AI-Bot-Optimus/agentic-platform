@@ -1,4 +1,13 @@
 # Multi-stage build for efficiency
+# Stage 1: Build React UI
+FROM node:18-alpine AS ui-builder
+WORKDIR /ui
+COPY ui/package*.json ./
+RUN npm ci
+COPY ui/ ./
+RUN npm run build
+
+# Stage 2: Build Python API
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -26,6 +35,9 @@ RUN pip install --no-cache-dir \
 # Copy application code
 COPY src/ src/
 COPY sample_data/ sample_data/
+
+# Copy built UI from first stage
+COPY --from=ui-builder /ui/dist ui/dist
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1

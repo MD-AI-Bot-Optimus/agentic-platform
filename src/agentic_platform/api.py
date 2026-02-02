@@ -11,12 +11,14 @@ import json
 import logging
 import os
 import tempfile
+from pathlib import Path
 from typing import Optional, Dict, Any
 
 import yaml
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from agentic_platform.audit.audit_log import InMemoryAuditLog
 from agentic_platform.tools.tool_registry import ToolRegistry
@@ -46,10 +48,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Mount static UI files
+ui_dist_path = Path(__file__).parent.parent.parent / "ui" / "dist"
+if ui_dist_path.exists():
+    app.mount("/ui", StaticFiles(directory=ui_dist_path, html=True), name="ui")
+
 
 @app.get("/")
 async def root():
-    """Welcome message with links to API documentation and endpoints."""
+    """Serve UI or return API welcome message."""
+    ui_index_path = ui_dist_path / "index.html"
+    if ui_index_path.exists():
+        return FileResponse(ui_index_path, media_type="text/html")
+    
+    # Fallback to JSON response if UI not available
     return {
         "message": "🤖 Agentic Platform API",
         "version": "0.1.0",
