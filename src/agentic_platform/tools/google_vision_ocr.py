@@ -21,6 +21,12 @@ class GoogleVisionOCR:
             return {"text": "", "confidence": 0.0}
         # The first annotation is the full text
         full_text = texts[0].description
-        # Confidence is not always provided; use 1.0 if missing
-        confidence = getattr(texts[0], 'score', 1.0)
+        # Calculate average confidence from individual symbols (texts[1:])
+        # texts[0] is the full text, texts[1:] are individual symbols/words
+        symbol_confidences = [getattr(text, 'confidence', 1.0) for text in texts[1:] if hasattr(text, 'confidence')]
+        if symbol_confidences:
+            confidence = sum(symbol_confidences) / len(symbol_confidences)
+        else:
+            # Fallback: use 1.0 if no individual confidences are available
+            confidence = 1.0
         return {"text": full_text, "confidence": confidence}
