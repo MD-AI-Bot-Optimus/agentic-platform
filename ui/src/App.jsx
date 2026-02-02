@@ -190,7 +190,7 @@ function App() {
               onClick={() => setActiveView('ocr')}
               variant={activeView === 'ocr' ? 'contained' : 'outlined'}
               sx={{
-                color: activeView === 'ocr' ? '#fff' : '#fff',
+                color: '#fff',
                 borderColor: '#fff',
                 backgroundColor: activeView === 'ocr' ? 'rgba(255,255,255,0.2)' : 'transparent',
                 '&:hover': {
@@ -205,7 +205,7 @@ function App() {
               onClick={() => setActiveView('mcp')}
               variant={activeView === 'mcp' ? 'contained' : 'outlined'}
               sx={{
-                color: activeView === 'mcp' ? '#fff' : '#fff',
+                color: '#fff',
                 borderColor: '#fff',
                 backgroundColor: activeView === 'mcp' ? 'rgba(255,255,255,0.2)' : 'transparent',
                 '&:hover': {
@@ -220,7 +220,7 @@ function App() {
               onClick={() => setActiveView('agent')}
               variant={activeView === 'agent' ? 'contained' : 'outlined'}
               sx={{
-                color: activeView === 'agent' ? '#fff' : '#fff',
+                color: '#fff',
                 borderColor: '#fff',
                 backgroundColor: activeView === 'agent' ? 'rgba(255,255,255,0.2)' : 'transparent',
                 '&:hover': {
@@ -235,7 +235,7 @@ function App() {
               onClick={() => setActiveView('workflow')}
               variant={activeView === 'workflow' ? 'contained' : 'outlined'}
               sx={{
-                color: activeView === 'workflow' ? '#fff' : '#fff',
+                color: '#fff',
                 borderColor: '#fff',
                 backgroundColor: activeView === 'workflow' ? 'rgba(255,255,255,0.2)' : 'transparent',
                 '&:hover': {
