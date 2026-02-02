@@ -298,6 +298,75 @@ class TestGoogleVisionOCR:
         assert abs(result["confidence"] - 0.70) < 0.001
         assert 0.0 < result["confidence"] < 1.0
 
+    @patch("agentic_platform.tools.google_vision_ocr.vision.ImageAnnotatorClient")
+    def test_ocr_complex_layout_all_zero_confidence(self, mock_client_class):
+        """Test OCR with complex layout (many symbols) where all have zero confidence.
+        
+        This mimics financial tables, forms, and other complex layouts where Google Vision
+        doesn't provide individual symbol confidence scores. Should return 0.95 to reflect
+        that it's a complex layout (more difficult) but text was successfully extracted.
+        """
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        mock_full_text = MagicMock()
+        mock_full_text.description = "Complex financial table with many numbers and columns"
+        mock_full_text.confidence = 0
+        
+        # Simulate 228 symbols (like the stock table) all with zero confidence
+        symbols = []
+        for i in range(228):  # Complex layout threshold
+            mock_sym = MagicMock()
+            mock_sym.confidence = 0  # All zero - typical for tables
+            symbols.append(mock_sym)
+        
+        mock_response = MagicMock()
+        mock_response.text_annotations = [mock_full_text] + symbols
+        mock_client.text_detection.return_value = mock_response
+
+        ocr = GoogleVisionOCR()
+        with patch("builtins.open", MagicMock(return_value=MagicMock(__enter__=MagicMock(return_value=MagicMock(read=MagicMock(return_value=b''))), __exit__=MagicMock(return_value=None)))):
+            result = ocr.ocr_image("stock_table.jpg")
+
+        # For complex layouts (>50 symbols) with no confidence data, use 0.95
+        # This reflects: high accuracy (Google Vision succeeded) but difficulty factor (complex layout)
+        assert isinstance(result["confidence"], float)
+        assert result["confidence"] == 0.95
+        assert 0.0 < result["confidence"] < 1.0
+        
+    @patch("agentic_platform.tools.google_vision_ocr.vision.ImageAnnotatorClient")
+    def test_ocr_simple_layout_all_zero_confidence(self, mock_client_class):
+        """Test OCR with simple layout (few symbols) where all have zero confidence.
+        
+        For simple layouts with few symbols, default to 1.0 since API was successful
+        and data was extracted.
+        """
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        mock_full_text = MagicMock()
+        mock_full_text.description = "Simple text"
+        mock_full_text.confidence = 0
+        
+        # Only 5 symbols (simple layout - below 50 threshold)
+        symbols = []
+        for i in range(5):
+            mock_sym = MagicMock()
+            mock_sym.confidence = 0
+            symbols.append(mock_sym)
+        
+        mock_response = MagicMock()
+        mock_response.text_annotations = [mock_full_text] + symbols
+        mock_client.text_detection.return_value = mock_response
+
+        ocr = GoogleVisionOCR()
+        with patch("builtins.open", MagicMock(return_value=MagicMock(__enter__=MagicMock(return_value=MagicMock(read=MagicMock(return_value=b''))), __exit__=MagicMock(return_value=None)))):
+            result = ocr.ocr_image("simple_text.jpg")
+
+        # For simple layouts with no confidence data, default to 1.0
+        assert isinstance(result["confidence"], float)
+        assert result["confidence"] == 1.0
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

@@ -31,11 +31,13 @@ class GoogleVisionOCR:
         # unless we can extract a meaningful confidence value
         
         confidence = 1.0  # Default for text_detection
+        confidence_source = "default"
         
         # Try to get confidence from full annotation (usually 0 or missing for text_detection)
         full_conf = getattr(texts[0], 'confidence', None)
         if full_conf is not None and full_conf > 0:
             confidence = float(full_conf)
+            confidence_source = "full_text_annotation"
             logger.info(f"Using full text annotation confidence: {confidence}")
         
         # Try to get confidence from individual symbols
@@ -49,11 +51,24 @@ class GoogleVisionOCR:
             
             if symbol_confidences:
                 confidence = sum(symbol_confidences) / len(symbol_confidences)
+                confidence_source = f"avg_of_{len(symbol_confidences)}_symbols"
                 logger.info(f"Calculated confidence from {len(symbol_confidences)} symbols: {confidence:.4f}")
             else:
-                logger.debug(f"No positive confidence values from {len(texts)-1} symbols, using default")
+                # For complex layouts with many symbols but no confidence data,
+                # use text extraction completeness as fallback metric
+                total_symbols = len(texts) - 1
+                if total_symbols > 50:
+                    # Complex document (table, form, etc.) - more difficult for OCR
+                    # But if text extracted, Google Vision succeeded, so higher confidence
+                    confidence = 0.95  # Slightly reduced from 1.0 for complex layouts
+                    confidence_source = f"complex_layout_{total_symbols}_symbols"
+                    logger.info(f"Complex layout detected ({total_symbols} symbols, 0 confidence scores). Using {confidence} for difficulty factor.")
+                else:
+                    confidence_source = f"default_simple_layout"
+                    logger.debug(f"No positive confidence values from {total_symbols} symbols, using default")
         
         # Ensure confidence is a float and within valid range [0.0, 1.0]
         confidence = float(max(0.0, min(1.0, confidence)))
+        logger.debug(f"Final confidence: {confidence:.4f} (source: {confidence_source})")
         
         return {"text": full_text, "confidence": confidence}
