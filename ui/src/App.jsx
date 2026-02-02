@@ -67,7 +67,7 @@ function App() {
     setOcrError(null);
     setOcrResult(null);
     const formData = new FormData();
-    formData.append('file', ocrImage);
+    formData.append('image', ocrImage);
     try {
       const apiUrl = window.location.origin;
       const response = await fetch(`${apiUrl}/run-ocr/`, {
@@ -179,108 +179,80 @@ function App() {
       display: 'flex',
       flexDirection: 'column'
     }}>
-      {/* Header */}
+      {/* Header with Navigation */}
       <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.4)', padding: '20px 0', zIndex: 100 }}>
-        <Typography variant="h3" align="center" fontWeight={700} color="#fff" sx={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)', fontWeight: 800, letterSpacing: '-1px', margin: 0 }}>
-          🚀 Agentic Platform
-        </Typography>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+          <Typography variant="h4" fontWeight={700} color="#fff" sx={{ textShadow: '0 2px 10px rgba(0,0,0,0.3)', fontWeight: 800, letterSpacing: '-1px', margin: 0 }}>
+            🚀 Agentic Platform
+          </Typography>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <Button
+              onClick={() => setActiveView('ocr')}
+              variant={activeView === 'ocr' ? 'contained' : 'outlined'}
+              sx={{
+                color: activeView === 'ocr' ? '#fff' : '#fff',
+                borderColor: '#fff',
+                backgroundColor: activeView === 'ocr' ? 'rgba(255,255,255,0.2)' : 'transparent',
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  borderColor: '#fff',
+                }
+              }}
+            >
+              📷 OCR Demo
+            </Button>
+            <Button
+              onClick={() => setActiveView('mcp')}
+              variant={activeView === 'mcp' ? 'contained' : 'outlined'}
+              sx={{
+                color: activeView === 'mcp' ? '#fff' : '#fff',
+                borderColor: '#fff',
+                backgroundColor: activeView === 'mcp' ? 'rgba(255,255,255,0.2)' : 'transparent',
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  borderColor: '#fff',
+                }
+              }}
+            >
+              🔧 MCP Tools
+            </Button>
+            <Button
+              onClick={() => setActiveView('agent')}
+              variant={activeView === 'agent' ? 'contained' : 'outlined'}
+              sx={{
+                color: activeView === 'agent' ? '#fff' : '#fff',
+                borderColor: '#fff',
+                backgroundColor: activeView === 'agent' ? 'rgba(255,255,255,0.2)' : 'transparent',
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  borderColor: '#fff',
+                }
+              }}
+            >
+              🤖 LLM Agent
+            </Button>
+            <Button
+              onClick={() => setActiveView('workflow')}
+              variant={activeView === 'workflow' ? 'contained' : 'outlined'}
+              sx={{
+                color: activeView === 'workflow' ? '#fff' : '#fff',
+                borderColor: '#fff',
+                backgroundColor: activeView === 'workflow' ? 'rgba(255,255,255,0.2)' : 'transparent',
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.1)',
+                  borderColor: '#fff',
+                }
+              }}
+            >
+              ⚙️ Workflow
+            </Button>
+          </div>
+        </div>
       </div>
 
-      {/* Main Content Area with Sidebar */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', zIndex: 3 }}>
-        {/* Left Sidebar Navigation - Text Labels */}
-        <Paper sx={{
-          width: '200px',
-          background: 'rgba(0, 0, 0, 0.4)',
-          boxShadow: '4px 0 12px rgba(0, 0, 0, 0.2)',
-          overflowY: 'auto',
-          display: 'flex',
-          flexDirection: 'column',
-          pt: 2,
-          gap: 0,
-          borderRadius: 0
-        }}>
-          {/* Navigation Items */}
-          <Box
-            onClick={() => setActiveView('ocr')}
-            sx={{
-              cursor: 'pointer',
-              padding: '16px 20px',
-              transition: 'all 0.3s ease',
-              background: activeView === 'ocr' ? 'rgba(255,255,255,0.15)' : 'transparent',
-              borderLeft: activeView === 'ocr' ? '4px solid #fff' : '4px solid transparent',
-              color: '#fff',
-              fontSize: '0.95rem',
-              fontWeight: activeView === 'ocr' ? 600 : 500,
-              '&:hover': {
-                background: 'rgba(255,255,255,0.1)',
-              }
-            }}
-          >
-            📷 OCR Demo
-          </Box>
-
-          <Box
-            onClick={() => setActiveView('mcp')}
-            sx={{
-              cursor: 'pointer',
-              padding: '16px 20px',
-              transition: 'all 0.3s ease',
-              background: activeView === 'mcp' ? 'rgba(255,255,255,0.15)' : 'transparent',
-              borderLeft: activeView === 'mcp' ? '4px solid #fff' : '4px solid transparent',
-              color: '#fff',
-              fontSize: '0.95rem',
-              fontWeight: activeView === 'mcp' ? 600 : 500,
-              '&:hover': {
-                background: 'rgba(255,255,255,0.1)',
-              }
-            }}
-          >
-            🔧 MCP Tools
-          </Box>
-
-          <Box
-            onClick={() => setActiveView('agent')}
-            sx={{
-              cursor: 'pointer',
-              padding: '16px 20px',
-              transition: 'all 0.3s ease',
-              background: activeView === 'agent' ? 'rgba(255,255,255,0.15)' : 'transparent',
-              borderLeft: activeView === 'agent' ? '4px solid #fff' : '4px solid transparent',
-              color: '#fff',
-              fontSize: '0.95rem',
-              fontWeight: activeView === 'agent' ? 600 : 500,
-              '&:hover': {
-                background: 'rgba(255,255,255,0.1)',
-              }
-            }}
-          >
-            🤖 LLM Agent
-          </Box>
-
-          <Box
-            onClick={() => setActiveView('workflow')}
-            sx={{
-              cursor: 'pointer',
-              padding: '16px 20px',
-              transition: 'all 0.3s ease',
-              background: activeView === 'workflow' ? 'rgba(255,255,255,0.15)' : 'transparent',
-              borderLeft: activeView === 'workflow' ? '4px solid #fff' : '4px solid transparent',
-              color: '#fff',
-              fontSize: '0.95rem',
-              fontWeight: activeView === 'workflow' ? 600 : 500,
-              '&:hover': {
-                background: 'rgba(255,255,255,0.1)',
-              }
-            }}
-          >
-            ⚙️ Workflow
-          </Box>
-        </Paper>
-
-        {/* Right Content Area */}
-        <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '60px' }}>
-          <Container maxWidth="md" sx={{ marginTop: '32px', marginBottom: '40px' }}>
+      {/* Main Content Area */}
+      <div style={{ flex: 1, overflowY: 'auto', paddingBottom: '60px', zIndex: 3 }}>
+        <Container maxWidth="md" sx={{ marginTop: '32px', marginBottom: '40px' }}>
             
             {/* OCR Demo Section */}
             {activeView === 'ocr' && (
