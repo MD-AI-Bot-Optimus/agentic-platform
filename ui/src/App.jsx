@@ -70,7 +70,7 @@ function App() {
     formData.append('image', ocrImage);
     try {
       const apiUrl = window.location.origin;
-      const response = await fetch(`${apiUrl}/run-ocr/`, {
+      const response = await fetch(`${apiUrl}/run-ocr`, {
         method: 'POST',
         body: formData,
       });

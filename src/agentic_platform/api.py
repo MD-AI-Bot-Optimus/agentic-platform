@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 
 import yaml
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -66,7 +66,7 @@ async def root():
             "docs": "/docs",
             "redoc": "/redoc",
             "openapi": "/openapi.json",
-            "ocr": "/run-ocr/",
+            "ocr": "/run-ocr",
             "workflow": "/run-workflow/",
             "mcp_tools": "/mcp/tools",
             "mcp_request": "/mcp/request"
@@ -75,7 +75,7 @@ async def root():
     }
 
 
-@app.post("/run-ocr/")
+@app.post("/run-ocr")
 async def run_ocr_workflow(
     image: UploadFile = File(...),
     credentials_json: Optional[UploadFile] = File(None)
@@ -133,7 +133,8 @@ async def run_ocr_workflow(
         )
 
         # Format results
-        audit_events = [vars(e) for e in audit_log.get_events("job-1")]
+        job_id = result.get("job_id", "job-1")  # Get job_id from result, fallback to job-1
+        audit_events = [vars(e) for e in audit_log.get_events(job_id)]
         tool_results = result.get("tool_results", [])
 
         # Add formatted text lines for better UI display
@@ -222,7 +223,8 @@ async def run_workflow(
             tool_client=tool_client,
             audit_log=audit_log
         )
-        audit_events = [vars(e) for e in audit_log.get_events("job-1")]
+        job_id = result.get("job_id", "job-1")  # Get job_id from result, fallback to job-1
+        audit_events = [vars(e) for e in audit_log.get_events(job_id)]
         logger.info(f"Workflow executed successfully with adapter: {adapter}")
         return JSONResponse({
             "result": result,
@@ -287,6 +289,63 @@ async def handle_mcp_request(request: Dict[str, Any]) -> JSONResponse:
             "id": request.get("id")
         }
         return JSONResponse(error_response, status_code=500)
+
+
+@app.post("/mcp/call-tool")
+async def call_mcp_tool(request: Dict[str, Any]) -> JSONResponse:
+    """
+    Call an MCP tool using REST-style API (non-MCP protocol).
+
+    This is a convenience endpoint for calling tools without MCP JSON-RPC overhead.
+
+    Args:
+        request: JSON object with tool_name and arguments
+
+    Returns:
+        JSON response with tool result
+
+    Example:
+        POST /mcp/call-tool
+        {
+            "tool_name": "google_vision_ocr",
+            "arguments": {"image_path": "path/to/image.jpg"}
+        }
+    """
+    try:
+        tool_name = request.get("tool_name")
+        arguments = request.get("arguments", {})
+
+        if not tool_name:
+            return JSONResponse({
+                "error": "Missing tool_name",
+                "message": "tool_name is required"
+            }, status_code=400)
+
+        logger.debug(f"MCP tool call: {tool_name} with args: {arguments}")
+
+        # Get tool from registry
+        tool_spec = tool_registry.get_tool(tool_name)
+        if not tool_spec:
+            return JSONResponse({
+                "error": "Tool not found",
+                "message": f"Tool '{tool_name}' not found"
+            }, status_code=404)
+
+        # Call the tool
+        result = tool_spec.handler(arguments)
+
+        logger.debug(f"MCP tool result: {result}")
+        return JSONResponse({
+            "tool_name": tool_name,
+            "result": result
+        })
+
+    except Exception as e:
+        logger.error(f"MCP tool call error: {str(e)}", exc_info=True)
+        return JSONResponse({
+            "error": "Tool execution failed",
+            "message": str(e)
+        }, status_code=500)
 
 
 @app.get("/mcp/tools")
@@ -431,8 +490,19 @@ async def list_agent_models():
         )
 
 
-# Mount static UI files at root (MUST be after all API routes)
-# This serves /assets/*, /ui/, and falls back to index.html for SPA routing
+# Mount static UI files at /static (MUST be after all API routes)
+# This serves /static/assets/*, /static/ui/
 ui_dist_path = Path(__file__).parent.parent.parent / "ui" / "dist"
 if ui_dist_path.exists():
-    app.mount("", StaticFiles(directory=ui_dist_path, html=True), name="static")
+    app.mount("/static", StaticFiles(directory=ui_dist_path, html=False), name="static")
+
+    # Add catch-all route for SPA routing (must be after static files mount)
+    @app.get("/{path:path}")
+    async def serve_spa(path: str):
+        """Serve SPA for any unmatched routes."""
+        ui_index_path = ui_dist_path / "index.html"
+        if ui_index_path.exists():
+            return FileResponse(ui_index_path, media_type="text/html")
+        
+        # Fallback
+        return {"detail": "Not Found"}

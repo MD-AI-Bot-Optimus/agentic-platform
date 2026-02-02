@@ -1,7 +1,8 @@
 from agentic_platform.core.types import AuditEvent
+from agentic_platform.core.ids import generate_job_id
 
 def run(wf_def, input_artifact, tool_client, audit_log, stop_at_node=None, return_state=False, resume_state=None):
-    job_id = "job-1"  # In real code, generate unique job id
+    job_id = generate_job_id()
     node_map = {n["id"]: n for n in wf_def["nodes"]}
     edges = wf_def["edges"]
     if resume_state is not None:
