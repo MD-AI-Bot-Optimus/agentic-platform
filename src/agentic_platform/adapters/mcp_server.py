@@ -333,17 +333,23 @@ class MCPServer:
             logger.debug(f"Tool result: {result}")
 
             # Format result as MCP content array
-            # Tools can return various types; we'll convert to text for now
+            # Tools can return various types; we'll preserve structure when possible
             if isinstance(result, dict) and "content" in result:
-                # Already formatted
-                content = result["content"]
+                # Already formatted as MCP content
+                mcp_result = result
+            elif isinstance(result, dict):
+                # For structured results (like OCR with text+confidence), return as-is
+                # This preserves the data structure without stringification
+                mcp_result = result
             elif isinstance(result, str):
+                # String results go in content array
                 content = [{"type": "text", "text": result}]
+                mcp_result = {"content": content}
             else:
-                # Convert to JSON string
+                # Other types get stringified
                 content = [{"type": "text", "text": json.dumps(result)}]
+                mcp_result = {"content": content}
 
-            mcp_result = {"content": content}
             response = MCPResponse(request_id).success(mcp_result)
             return response
 
