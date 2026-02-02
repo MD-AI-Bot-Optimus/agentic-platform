@@ -47,6 +47,26 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+async def root():
+    """Welcome message with links to API documentation and endpoints."""
+    return {
+        "message": "🤖 Agentic Platform API",
+        "version": "0.1.0",
+        "status": "online",
+        "endpoints": {
+            "docs": "/docs",
+            "redoc": "/redoc",
+            "openapi": "/openapi.json",
+            "ocr": "/run-ocr/",
+            "workflow": "/run-workflow/",
+            "mcp_tools": "/mcp/tools",
+            "mcp_request": "/mcp/request"
+        },
+        "docs_url": "https://agentic-platform-api-7erqohmwxa-uc.a.run.app/docs"
+    }
+
+
 @app.post("/run-ocr/")
 async def run_ocr_workflow(
     image: UploadFile = File(...),
