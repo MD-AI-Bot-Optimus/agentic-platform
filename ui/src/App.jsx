@@ -172,7 +172,7 @@ function App() {
     }}>
       <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.3)', padding: '16px 0', zIndex: 100 }}>
         <Typography variant="h3" align="center" fontWeight={700} color="#fff" sx={{ textShadow: '0 2px 10px rgba(0,0,0,0.2)', fontWeight: 800, letterSpacing: '-1px', margin: 0 }}>
-          Agentic Platform Demo UI
+          Agentic Platform
         </Typography>
       </div>
       <div className="highway-content" style={{ position: 'relative', zIndex: 3, paddingBottom: '500px', flex: 1, overflowY: 'auto' }}>
