@@ -1,20 +1,6 @@
 import React, { useState } from 'react';
 import { Container, Box, Typography, Card, CardContent, Button, TextField, Select, MenuItem, InputLabel, FormControl, Alert, CircularProgress, Paper } from '@mui/material';
 
-// Navigation item styles
-const navItemStyle = (isActive) => ({
-  padding: '14px 16px',
-  cursor: 'pointer',
-  borderLeft: isActive ? '4px solid #667eea' : '4px solid transparent',
-  background: isActive ? '#f0f4ff' : 'transparent',
-  transition: 'all 0.3s ease',
-  fontWeight: isActive ? 600 : 500,
-  color: isActive ? '#667eea' : '#666',
-  fontSize: '0.95rem',
-  borderRadius: '0 8px 8px 0',
-  margin: '6px 0'
-});
-
 function App() {
   // Active view state
   const [activeView, setActiveView] = useState('ocr');
@@ -202,58 +188,109 @@ function App() {
 
       {/* Main Content Area with Sidebar */}
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden', zIndex: 3 }}>
-        {/* Left Sidebar Navigation */}
+        {/* Left Sidebar Navigation - Modern Icon-Only */}
         <Paper sx={{
-          width: '220px',
-          background: '#ffffff',
-          boxShadow: '4px 0 12px rgba(0, 0, 0, 0.15)',
+          width: '90px',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          boxShadow: '8px 0 24px rgba(102, 126, 234, 0.3)',
           overflowY: 'auto',
-          borderRight: '2px solid #e8e8e8'
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          pt: 3,
+          gap: 1
         }}>
-          <Box sx={{ p: 2.5 }}>
-            <Typography variant="h6" fontWeight={700} sx={{ mb: 3, color: '#667eea', fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              📁 Navigation
-            </Typography>
-            
-            {/* Navigation Items */}
-            <Box
-              onClick={() => setActiveView('ocr')}
-              sx={navItemStyle(activeView === 'ocr')}
-            >
-              📷 OCR Demo
-            </Box>
+          {/* Navigation Icons */}
+          <Box
+            onClick={() => setActiveView('ocr')}
+            sx={{
+              fontSize: '32px',
+              cursor: 'pointer',
+              padding: '16px',
+              borderRadius: '12px',
+              transition: 'all 0.3s ease',
+              background: activeView === 'ocr' ? 'rgba(255,255,255,0.3)' : 'transparent',
+              border: activeView === 'ocr' ? '2px solid rgba(255,255,255,0.8)' : '2px solid transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              '&:hover': {
+                background: 'rgba(255,255,255,0.2)',
+                transform: 'scale(1.1)'
+              }
+            }}
+            title="OCR Demo"
+          >
+            📷
+          </Box>
 
-            <Box
-              onClick={() => setActiveView('mcp')}
-              sx={navItemStyle(activeView === 'mcp')}
-            >
-              🔧 MCP Tools
-            </Box>
+          <Box
+            onClick={() => setActiveView('mcp')}
+            sx={{
+              fontSize: '32px',
+              cursor: 'pointer',
+              padding: '16px',
+              borderRadius: '12px',
+              transition: 'all 0.3s ease',
+              background: activeView === 'mcp' ? 'rgba(255,255,255,0.3)' : 'transparent',
+              border: activeView === 'mcp' ? '2px solid rgba(255,255,255,0.8)' : '2px solid transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              '&:hover': {
+                background: 'rgba(255,255,255,0.2)',
+                transform: 'scale(1.1)'
+              }
+            }}
+            title="MCP Tools"
+          >
+            🔧
+          </Box>
 
-            <Box
-              onClick={() => setActiveView('agent')}
-              sx={navItemStyle(activeView === 'agent')}
-            >
-              🤖 LLM Agent
-            </Box>
+          <Box
+            onClick={() => setActiveView('agent')}
+            sx={{
+              fontSize: '32px',
+              cursor: 'pointer',
+              padding: '16px',
+              borderRadius: '12px',
+              transition: 'all 0.3s ease',
+              background: activeView === 'agent' ? 'rgba(255,255,255,0.3)' : 'transparent',
+              border: activeView === 'agent' ? '2px solid rgba(255,255,255,0.8)' : '2px solid transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              '&:hover': {
+                background: 'rgba(255,255,255,0.2)',
+                transform: 'scale(1.1)'
+              }
+            }}
+            title="LLM Agent"
+          >
+            🤖
+          </Box>
 
-            <Box
-              onClick={() => setActiveView('workflow')}
-              sx={navItemStyle(activeView === 'workflow')}
-            >
-              ⚙️ Workflow
-            </Box>
-
-            {/* Divider */}
-            <Box sx={{ borderTop: '1px solid #e0e0e0', my: 2 }} />
-
-            {/* Info Box */}
-            <Box sx={{ background: '#f0f4ff', borderRadius: 1, p: 1.5, fontSize: '0.8rem', color: '#667eea', lineHeight: 1.6 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600 }}>💡 Tip:</Typography>
-              <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>
-                Click items above to switch between demos and tools.
-              </Typography>
-            </Box>
+          <Box
+            onClick={() => setActiveView('workflow')}
+            sx={{
+              fontSize: '32px',
+              cursor: 'pointer',
+              padding: '16px',
+              borderRadius: '12px',
+              transition: 'all 0.3s ease',
+              background: activeView === 'workflow' ? 'rgba(255,255,255,0.3)' : 'transparent',
+              border: activeView === 'workflow' ? '2px solid rgba(255,255,255,0.8)' : '2px solid transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              '&:hover': {
+                background: 'rgba(255,255,255,0.2)',
+                transform: 'scale(1.1)'
+              }
+            }}
+            title="Workflow"
+          >
+            ⚙️
           </Box>
         </Paper>
 
