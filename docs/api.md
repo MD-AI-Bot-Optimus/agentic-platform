@@ -200,7 +200,119 @@ This API allows you to execute workflows and perform OCR on images. It provides 
     http://localhost:8002/run-workflow/
   ```
 
-### UI Features
+### 2. Workflow Execution Endpoint
+- **POST** `/run-workflow/`
+  - **Description:** Execute a YAML-defined workflow with pluggable tool adapters (MCP or LangGraph)
+  - **Request (Multipart Form Data):**
+    - `workflow` (file, required): YAML workflow definition with nodes and edges
+    - `input_artifact` (file, required): JSON input data for the workflow
+    - `adapter` (string, optional): Tool adapter to use (`mcp` or `langgraph`, default: `mcp`)
+  
+  - **Workflow YAML Format:**
+    ```yaml
+    nodes:
+      - id: start
+        type: start
+      - id: ocr_step
+        type: tool
+        tool: google_vision_ocr        # Tool to call
+        model: default                 # Model selection
+      - id: human_review
+        type: review
+        threshold: 0.8                 # Confidence threshold for review
+      - id: end
+        type: end
+    edges:
+      - from: start
+        to: ocr_step
+      - from: ocr_step
+        to: human_review
+        condition: "input['confidence'] < 0.8"  # Conditional routing
+      - from: human_review
+        to: end
+      - from: ocr_step
+        to: end
+        condition: "input['confidence'] >= 0.8"
+    ```
+  
+  - **Response:**
+    ```json
+    {
+      "result": {
+        "job_id": "job-1",
+        "status": "completed",
+        "tool_results": [
+          {
+            "node_id": "ocr_step",
+            "result": {
+              "text": "Extracted text...",
+              "confidence": 0.95,
+              "confidence_source": "default_simple_layout",
+              "symbols_count": 142
+            }
+          }
+        ]
+      },
+      "tool_results": [...],  # All tool outputs from workflow
+      "audit_log": [          # Complete execution trace
+        {
+          "event_type": "STEP_STARTED",
+          "job_id": "job-1",
+          "node_id": "ocr_step",
+          "timestamp": "2026-01-31T00:00:01Z",
+          "status": "started"
+        },
+        {
+          "event_type": "STEP_ENDED",
+          "job_id": "job-1",
+          "node_id": "ocr_step",
+          "timestamp": "2026-01-31T00:00:02Z",
+          "status": "ended"
+        }
+      ]
+    }
+    ```
+  
+  - **Workflow Features:**
+    - **DAG Execution:** Directed acyclic graph with proper cycle detection
+    - **Conditional Routing:** Evaluate conditions on edges (e.g., `input['confidence'] >= 0.8`)
+    - **Tool Integration:** Call registered tools (OCR, ML models, 3rd-party APIs)
+    - **Human Review:** Route low-confidence results to human review queues
+    - **Retry Policy:** Automatic retry on transient failures
+    - **Audit Trail:** Complete event log with STEP_STARTED, STEP_ENDED, STEP_ERRORED events
+  
+  - **Example:**
+    ```bash
+    # Create workflow
+    cat > workflow.yaml << 'EOF'
+    nodes:
+      - id: start
+        type: start
+      - id: ocr
+        type: tool
+        tool: google_vision_ocr
+      - id: end
+        type: end
+    edges:
+      - from: start
+        to: ocr
+      - from: ocr
+        to: end
+    EOF
+    
+    # Create input
+    cat > input.json << 'EOF'
+    {"image_path": "sample_data/letter.jpg"}
+    EOF
+    
+    # Execute
+    curl -X POST http://localhost:8000/run-workflow/ \
+      -F "workflow=@workflow.yaml" \
+      -F "input_artifact=@input.json" \
+      -F "adapter=mcp"
+    ```
+
+
 - **OCR Demo:** Upload images, run OCR, view formatted results with line-by-line text display
 - **Workflow Runner:** Upload YAML workflows, select adapters, provide JSON input, view results
 - **Audit Logs:** All workflow steps, tool calls, and errors are logged and displayed

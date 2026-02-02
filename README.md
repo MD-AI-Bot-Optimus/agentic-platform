@@ -47,10 +47,10 @@ A production-ready, test-driven foundation for building multi-agent AI workflows
 ### Option 1: Live Demo (No Setup Required)
 Visit **https://agentic-platform-api-7erqohmwxa-uc.a.run.app/**
 
-- ✅ Upload images for OCR with confidence scoring
-- ✅ Test MCP tools with JSON arguments
-- ✅ Execute workflows and view results
-- ✅ See audit trail of all operations
+- ✅ **OCR Demo** - Upload images, extract text with confidence scoring (simple/complex/hard-to-read)
+- ✅ **MCP Tool Tester** - Call registered tools directly with JSON-RPC (includes sample files for testing)
+- ✅ **Workflow Executor** - Upload YAML workflow + JSON input, run with MCP or LangGraph adapter (see results below)
+- ✅ **Full Audit Trail** - See all operations logged with timestamps and correlation IDs
 
 ### Option 2: Local Development (5 minutes)
 
@@ -87,14 +87,14 @@ docker run -p 8080:8080 \
 
 ## 🛠️ API Endpoints
 
-| Method | Endpoint | Purpose | Example |
-|--------|----------|---------|---------|
+| Method | Endpoint | Purpose | What You Get |
+|--------|----------|---------|--------------|
 | GET | `/` | Welcome & health check | - |
 | GET | `/docs` | Interactive Swagger docs | - |
-| GET | `/mcp/tools` | List all available tools (JSON-RPC) | See tools |
-| POST | `/mcp/request` | Call a tool (JSON-RPC 2.0) | Call OCR |
-| POST | `/run-ocr/` | Extract text from image file | Extract text |
-| POST | `/run-workflow/` | Execute workflow from YAML | Run workflow |
+| GET | `/mcp/tools` | List all available tools | Tool names, descriptions, input schemas |
+| POST | `/mcp/request` | Call a tool (JSON-RPC 2.0) | Tool output (OCR text + confidence, etc.) |
+| POST | `/run-ocr/` | Extract text from image | Text, confidence score, symbol count |
+| POST | `/run-workflow/` | Execute workflow DAG | **Job results** + **tool outputs** + **audit trail** |
 
 ### Quick API Examples
 
@@ -135,6 +135,49 @@ curl -X POST https://agentic-platform-api-7erqohmwxa-uc.a.run.app/mcp/request \
     },
     "id": 1
   }'
+```
+
+**Workflow Execution**
+```bash
+# Create workflow.yaml (YAML DAG with nodes and edges)
+cat > workflow.yaml << 'EOF'
+nodes:
+  - id: start
+    type: start
+  - id: ocr_step
+    type: tool
+    tool: google_vision_ocr
+    model: default
+  - id: end
+    type: end
+edges:
+  - from: start
+    to: ocr_step
+  - from: ocr_step
+    to: end
+EOF
+
+# Create input.json (input data for workflow)
+cat > input.json << 'EOF'
+{"image_path": "document.jpg"}
+EOF
+
+# Execute workflow
+curl -X POST https://agentic-platform-api-7erqohmwxa-uc.a.run.app/run-workflow/ \
+  -F "workflow=@workflow.yaml" \
+  -F "input_artifact=@input.json" \
+  -F "adapter=mcp"
+
+# Response:
+# {
+#   "result": {
+#     "job_id": "job-1",
+#     "status": "completed",
+#     "tool_results": [...]
+#   },
+#   "tool_results": [...],      # Output from each tool in workflow
+#   "audit_log": [...]          # Complete audit trail with timestamps
+# }
 ```
 
 See [API.md](docs/api.md) for full endpoint documentation with more examples.
@@ -247,12 +290,13 @@ agentic-platform/
 - 13 end-to-end integration tests
 
 ### Workflow Engine (Production ✅)
-- YAML-based workflow definitions
-- Node-edge graph execution
-- Conditional branching with confidence thresholds
+- YAML-based workflow definitions (nodes + edges DAG)
+- Node-edge graph execution with cycle detection
+- Conditional branching (evaluate conditions on edges)
 - Retry policies and error handling
-- Human-in-the-loop review routing
+- Human-in-the-loop review routing (for low-confidence results)
 - Artifact versioning and checksumming
+- **View Results:** Job status, tool outputs from each node, and complete audit trail with timestamps
 
 ### Audit Trail (Production ✅)
 - Immutable event logging with timestamps
