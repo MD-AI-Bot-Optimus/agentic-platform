@@ -2,7 +2,7 @@
 
 A production-ready, test-driven foundation for building multi-agent AI workflows with **OCR**, **MCP protocol**, **tool orchestration**, and **audit trails**. Currently at Phase 8 with live OCR capabilities and MCP integration—architected for future LLM agents, RAG systems, and enterprise AI applications.
 
-**🌐 Live Demo:** https://agentic-platform-api-7erqohmwxa-uc.a.run.app/ | **📊 Tech Stack:** 28% of aspirational AI platform coverage
+**🌐 Live Demo:** https://agentic-platform-api-7erqohmwxa-uc.a.run.app/ | **📊 Tech Stack:** 28% of aspirational AI platform coverage | **🚀 Phase 9:** LangGraph Development (Week 1/4)
 
 ## ✨ Current Capabilities
 
@@ -18,6 +18,9 @@ A production-ready, test-driven foundation for building multi-agent AI workflows
 ### 🔄 In Development
 - **Agent Memory & State** - Multi-step conversation context (planned: PostgreSQL backend)
 - **LLM Integration** - Model routing & provider selection (planned: Gemini, Claude, OpenAI)
+  - **Phase 9 (Current):** LangGraph agent with real LLM support - Week 1/4 in progress
+  - MockLLM for testing (no API costs)
+  - Support for Claude, GPT-4, Gemini
 - **RAG System** - Knowledge grounding and retrieval (planned: Pinecone/Weaviate)
 - **Streaming UI** - Real-time token streaming and agent execution visualization
 - **Multi-region** - Scaling beyond us-central1
