@@ -14,9 +14,17 @@ This document describes the adapter pattern and current integrations for the Age
 
 ## LangGraph (LangChain) Adapter
 - File: `src/agentic_platform/adapters/langgraph_adapter.py`
-- Supports both simulated and real HTTP POST calls to a LangGraph endpoint.
-- Configure with `{ "endpoint": "http://your-langgraph-endpoint" }` to enable real calls.
-- Used in CLI, API, and tests.
+- **Status:** Stub only - returns simulated responses
+- Currently does NOT have real LangGraph implementation
+- No graph execution, state management, or LLM integration
+- Dependencies missing: `langgraph`, `langchain`, LLM providers
+- **Future:** Real implementation requires:
+  - Install: `pip install langgraph langchain anthropic`
+  - StateGraph definition with agent/tool/decision nodes
+  - LLM integration (e.g., Claude, GPT-4)
+  - Tool binding for MCP tools
+  - Streaming support for real-time responses
+- See `LANGGRAPH_ROADMAP.md` for implementation plan
 
 ## Adapter Selection (API & CLI)
 - The API `/run-workflow/` endpoint accepts an `adapter` form field (`mcp` or `langgraph`).

@@ -4,9 +4,9 @@ This document explains how to deploy the Agentic Platform to Google Cloud Run.
 
 ## Overview
 
-Cloud Run automatically deploys your application from GitLab:
-- Every `git push` to main triggers a build
-- Docker image is built and deployed
+Cloud Run automatically deploys your application from GitHub:
+- Every `git push` to `github/main` triggers a build
+- Docker image is built and deployed via Cloud Build
 - Public URL is generated instantly
 - Pay only for what you use (serverless)
 
@@ -15,7 +15,7 @@ Cloud Run automatically deploys your application from GitLab:
 1. **Google Cloud Account** - https://cloud.google.com
 2. **Google Cloud Project** - Create one in the console
 3. **Google Cloud CLI** - `brew install google-cloud-sdk`
-4. **GitLab Account** - Already have this ✓
+4. **GitHub Account** - Push to https://github.com/MD-AI-Bot-Optimus/agentic-platform
 
 ## Setup Instructions
 
@@ -37,40 +37,40 @@ gcloud services enable run.googleapis.com
 gcloud services enable containerregistry.googleapis.com
 ```
 
-### Step 3: Connect GitLab to Google Cloud Build
+### Step 3: Cloud Build Trigger (Already Configured)
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com)
-2. Navigate to **Cloud Build** → **Triggers**
-3. Click **Create Trigger**
-4. **Connect Repository:**
-   - Source: Select **GitLab**
-   - Authorize (follow OAuth flow)
-   - Select `MD-AI-Bot-Optimus/agentic-platform`
-5. **Trigger Settings:**
-   - Trigger type: **Push to a branch**
-   - Branch: `^main$`
-   - Configuration: **Cloud Build configuration file (yaml)**
-   - Location: `cloudbuild.yaml`
-6. Click **Create**
+The build trigger is already configured:
+- Source: **GitHub** (`MD-AI-Bot-Optimus/agentic-platform`)
+- Branch: `main`
+- Configuration: `cloudbuild.yaml`
 
-### Step 4: Manual First Deploy (Optional)
+To verify the trigger:
+```sh
+gcloud builds triggers list
+```
 
-If you want to deploy immediately without waiting for a Git push:
+You should see `github-auto-deploy` with:
+- Owner: `MD-AI-Bot-Optimus`
+- Name: `agentic-platform`
+- Branch: `^main$`
+
+### Step 4: Deploy by Pushing to GitHub
+
+To trigger a deploy, push to GitHub:
 
 ```sh
-# Deploy from local repo
-gcloud builds submit \
-  --config=cloudbuild.yaml \
-  --region=us-central1
+# Make changes locally
+git add .
+git commit -m "fix: update OCR confidence"
 
-# Or deploy directly
-gcloud run deploy agentic-platform-api \
-  --source . \
-  --region us-central1 \
-  --allow-unauthenticated \
-  --memory 512Mi \
-  --cpu 2 \
-  --timeout 3600
+# Push to GitHub (triggers Cloud Build automatically)
+git push github main
+
+# Check build status
+gcloud builds list --limit=5
+
+# Stream build logs
+gcloud builds log <BUILD_ID> --stream
 ```
 
 ### Step 5: Get Your Public URL
@@ -83,19 +83,21 @@ Or find it in [Cloud Run Console](https://console.cloud.google.com/run)
 
 ## How It Works
 
-1. **You push code to GitLab**
+1. **You push code to GitHub**
    ```sh
-   git push origin main
+   git push github main
    ```
 
-2. **Cloud Build detects the push**
-   - Reads `cloudbuild.yaml`
+2. **GitHub webhook triggers Cloud Build**
+   - Webhook sends push event to Cloud Build
+   - Cloud Build reads `cloudbuild.yaml`
    - Builds Docker image from `Dockerfile`
-   - Uploads image to Container Registry
+   - Uploads image to Container Registry (gcr.io)
 
 3. **Cloud Run deploys automatically**
+   - Cloud Build step deploys to Cloud Run
    - Creates new service revision
-   - Routes traffic to new version
+   - Routes 100% of traffic to new version
    - Old versions kept for rollback
 
 4. **You get a public URL**

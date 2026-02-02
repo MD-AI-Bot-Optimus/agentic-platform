@@ -94,10 +94,40 @@ This document details the incremental, test-driven development (TDD) roadmap for
 ✅ 80. docs: API documentation with MCP endpoint examples
 ✅ 81. chore: All 57 MCP tests passing (22 MCPServer + 22 MCPAdapter + 13 E2E)
 
-## Phase 7.5 — UI Polish & Documentation (COMPLETED)
-✅ 82. feat: Restructure UI cards into 2-column responsive grid layout
-✅ 83. feat: Add Highway 1 Pacific Coast background image
-✅ 84. feat: Fixed sticky header that doesn't scroll beyond
+## Phase 8 — OCR Confidence Improvements (COMPLETED)
+✅ 85. test: OCR confidence for simple documents (1.0)
+✅ 86. test: OCR confidence for hard-to-read documents (0.2-0.4 average)
+✅ 87. test: OCR confidence for complex layouts (>150 symbols = 0.95)
+✅ 88. feat: Layout complexity detection with 150-symbol threshold
+✅ 89. feat: Confidence source tracking for debugging
+✅ 90. fix: Increase threshold from 50 to 150 to avoid false positives
+✅ 91. test: 14 comprehensive OCR confidence tests (all passing)
+
+## CURRENT STATUS
+
+**Live Deployment:** https://agentic-platform-api-7erqohmwxa-uc.a.run.app
+
+**Implemented Features:**
+- ✅ OCR with intelligent confidence scoring
+- ✅ MCP protocol support (JSON-RPC 2.0)
+- ✅ Google Vision API integration
+- ✅ React UI with MCP Tool Tester
+- ✅ Workflow engine with branching
+- ✅ Audit logging
+- ✅ Cloud Run deployment with GitHub auto-trigger
+
+**Known Limitations:**
+- ❌ LangGraph: Stub only (returns simulated responses, no real graph execution)
+- ❌ No LLM integration (no Claude, GPT-4, etc.)
+- ❌ No RAG/vector database
+- ❌ No persistent state (in-memory only)
+- ❌ No agent memory/conversation history
+
+**Next Priorities:**
+1. LangGraph real implementation (need dependencies: langgraph, langchain, anthropic)
+2. LLM integration for agentic workflows
+3. RAG system for knowledge grounding
+4. Persistent state store (PostgreSQL)
 ✅ 85. feat: Improved card styling with shadows and borders
 ✅ 86. chore: Remove unused CSS and SVG files
 ✅ 87. docs: Update main README with current status and features

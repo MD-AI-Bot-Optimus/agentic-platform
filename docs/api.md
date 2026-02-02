@@ -8,52 +8,55 @@ This API allows you to execute workflows and perform OCR on images. It provides 
 
 ## Endpoints
 
-### 1. OCR Endpoint
-- **POST** `/run-ocr/`
-  - **Request:**
-    - `image`: Image file (multipart/form-data) — JPEG, PNG, etc.
-    - `credentials_json`: (optional) Google credentials JSON file
+### 1. OCR Endpoint (MCP Protocol)
+- **POST** `/mcp/request`
+  - **Description:** Extract text and confidence from images via MCP JSON-RPC 2.0
+  - **Request Body:**
+    ```json
+    {
+      "jsonrpc": "2.0",
+      "method": "tools/call",
+      "params": {
+        "name": "google_vision_ocr",
+        "arguments": {
+          "image_path": "sample_data/stock_gs200.jpg"
+        }
+      },
+      "id": 1
+    }
+    ```
   - **Response:**
     ```json
     {
+      "jsonrpc": "2.0",
       "result": {
-        "job_id": "job-1",
-        "status": "completed",
-        "tool_results": [
-          {
-            "node_id": "ocr_step",
-            "result": {
-              "text": "Extracted text...",
-              "confidence": 0.95,
-              "formatted_text_lines": ["Line 1", "Line 2", ...]
-            }
-          }
-        ]
+        "text": "Extracted text from image...",
+        "confidence": 0.95
       },
-      "tool_results": [...],
-      "audit_log": [...]
+      "id": 1
     }
     ```
+  - **Confidence Behavior:**
+    - **Simple documents** (letters, etc.): `1.0` (high confidence)
+    - **Hard-to-read documents** (blurry, handwriting): `0.2-0.4` (averaged individual symbol confidences)
+    - **Complex layouts** (financial tables >150 symbols, all zero confidence): `0.95` (layout complexity factor)
   - **Authentication:** Uses Application Default Credentials (ADC) from Google Cloud SDK
   - **Example:**
     ```bash
-    curl -X POST http://localhost:8002/run-ocr/ \
-      -F "image=@sample_image.jpg"
+    curl -X POST http://localhost:8000/mcp/request \
+      -H "Content-Type: application/json" \
+      -d '{
+        "jsonrpc": "2.0",
+        "method": "tools/call",
+        "params": {
+          "name": "google_vision_ocr",
+          "arguments": {"image_path": "sample_data/letter.jpg"}
+        },
+        "id": 1
+      }'
     ```
-
-### 2. Workflow Endpoint
-- **POST** `/run-workflow/`
-  - **Request:**
-    - `workflow`: YAML file (multipart/form-data)
-    - `input_artifact`: JSON file (multipart/form-data)
-    - `adapter`: (optional, form field) Adapter to use for tool calls (`mcp` or `langgraph`, default: `mcp`)
-  - **Response:**
-    - `result`: Output of the workflow
-    - `audit_log`: List of audit events
-
-### 3. MCP Tools Listing Endpoint
 - **GET** `/mcp/tools`
-  - **Response:** List of available MCP tools with metadata
+  - **Description:** List all available MCP tools with metadata
   - **Example Response:**
     ```json
     {
@@ -85,7 +88,7 @@ This API allows you to execute workflows and perform OCR on images. It provides 
     curl http://localhost:8002/mcp/tools
     ```
 
-### 4. MCP Tool Execution Endpoint
+### 3. MCP Tool Execution Endpoint
 - **POST** `/mcp/request`
   - **Description:** Execute a tool via JSON-RPC 2.0 MCP protocol
   - **Request Body:** JSON-RPC 2.0 request

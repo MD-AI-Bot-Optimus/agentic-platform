@@ -35,11 +35,11 @@ This document describes the architecture, interfaces, and extension points of th
   - State management and artifact linking
 - **Agents:** Agent registry, base classes, artifact store integration
 - **Adapters:** All external integrations implement adapter pattern:
-  - **MCPAdapter** - JSON-RPC 2.0 protocol for tool discovery and calling
-  - **LangGraphAdapter** - Graph-based workflow orchestration (coming Phase 8)
-  - **n8nAdapter** - Visual workflow builder (coming Phase 9)
-  - **S3ArtifactStore**, **DBArtifactStore** - Artifact persistence
-  - **GoogleVisionOCR** - Image text extraction
+  - **MCPAdapter** - JSON-RPC 2.0 protocol for tool discovery and calling ✅ IMPLEMENTED
+  - **LangGraphAdapter** - Stub only, returns simulated responses (not yet implemented)
+  - **n8nAdapter** - Not yet implemented
+  - **S3ArtifactStore**, **DBArtifactStore** - Artifact persistence (not yet implemented)
+  - **GoogleVisionOCR** - Image text extraction ✅ IMPLEMENTED
 - **Integrations:** Google Cloud SDK (Application Default Credentials for auth)
 
 ## Key Interfaces (Ports)
