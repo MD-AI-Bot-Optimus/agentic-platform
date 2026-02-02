@@ -53,7 +53,8 @@ function App() {
   React.useEffect(() => {
     const loadMcpTools = async () => {
       try {
-        const response = await fetch('http://localhost:8002/mcp/tools');
+        const apiUrl = window.location.origin;
+        const response = await fetch(`${apiUrl}/mcp/tools`);
         if (response.ok) {
           const data = await response.json();
           setMcpAvailableTools(data.tools || []);
@@ -75,7 +76,8 @@ function App() {
     formData.append('input_artifact', inputFile);
     formData.append('adapter', adapter);
     try {
-      const response = await fetch('http://localhost:8002/run-workflow/', {
+      const apiUrl = window.location.origin;
+      const response = await fetch(`${apiUrl}/run-workflow/`, {
         method: 'POST',
         body: formData,
       });
@@ -97,7 +99,8 @@ function App() {
     const formData = new FormData();
     formData.append('image', ocrImage);
     try {
-      const response = await fetch('http://localhost:8002/run-ocr/', {
+      const apiUrl = window.location.origin;
+      const response = await fetch(`${apiUrl}/run-ocr/`, {
         method: 'POST',
         body: formData,
       });
@@ -125,7 +128,8 @@ function App() {
         return;
       }
 
-      const response = await fetch('http://localhost:8002/mcp/request', {
+      const apiUrl = window.location.origin;
+      const response = await fetch(`${apiUrl}/mcp/request`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
