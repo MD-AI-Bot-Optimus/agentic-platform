@@ -48,15 +48,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static UI files
-ui_dist_path = Path(__file__).parent.parent.parent / "ui" / "dist"
-if ui_dist_path.exists():
-    app.mount("/ui", StaticFiles(directory=ui_dist_path, html=True), name="ui")
-
 
 @app.get("/")
 async def root():
     """Serve UI or return API welcome message."""
+    ui_dist_path = Path(__file__).parent.parent.parent / "ui" / "dist"
     ui_index_path = ui_dist_path / "index.html"
     if ui_index_path.exists():
         return FileResponse(ui_index_path, media_type="text/html")
@@ -325,3 +321,10 @@ async def list_mcp_tools() -> JSONResponse:
             status_code=500,
             detail=f"Error listing tools: {str(e)}"
         )
+
+
+# Mount static UI files at root (MUST be after all API routes)
+# This serves /assets/*, /ui/, and falls back to index.html for SPA routing
+ui_dist_path = Path(__file__).parent.parent.parent / "ui" / "dist"
+if ui_dist_path.exists():
+    app.mount("", StaticFiles(directory=ui_dist_path, html=True), name="static")
