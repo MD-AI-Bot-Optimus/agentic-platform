@@ -305,6 +305,7 @@ class TestGoogleVisionOCR:
         This mimics financial tables, forms, and other complex layouts where Google Vision
         doesn't provide individual symbol confidence scores. Should return 0.95 to reflect
         that it's a complex layout (more difficult) but text was successfully extracted.
+        Threshold: >150 symbols to avoid false positives on normal documents.
         """
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
@@ -314,8 +315,9 @@ class TestGoogleVisionOCR:
         mock_full_text.confidence = 0
         
         # Simulate 228 symbols (like the stock table) all with zero confidence
+        # This is well above the 150 symbol threshold for complex layouts
         symbols = []
-        for i in range(228):  # Complex layout threshold
+        for i in range(228):  # Complex layout threshold: >150
             mock_sym = MagicMock()
             mock_sym.confidence = 0  # All zero - typical for tables
             symbols.append(mock_sym)
@@ -328,7 +330,7 @@ class TestGoogleVisionOCR:
         with patch("builtins.open", MagicMock(return_value=MagicMock(__enter__=MagicMock(return_value=MagicMock(read=MagicMock(return_value=b''))), __exit__=MagicMock(return_value=None)))):
             result = ocr.ocr_image("stock_table.jpg")
 
-        # For complex layouts (>50 symbols) with no confidence data, use 0.95
+        # For complex layouts (>150 symbols) with no confidence data, use 0.95
         # This reflects: high accuracy (Google Vision succeeded) but difficulty factor (complex layout)
         assert isinstance(result["confidence"], float)
         assert result["confidence"] == 0.95
@@ -348,7 +350,7 @@ class TestGoogleVisionOCR:
         mock_full_text.description = "Simple text"
         mock_full_text.confidence = 0
         
-        # Only 5 symbols (simple layout - below 50 threshold)
+        # Only 5 symbols (simple layout - well below 150 threshold)
         symbols = []
         for i in range(5):
             mock_sym = MagicMock()
@@ -364,6 +366,39 @@ class TestGoogleVisionOCR:
             result = ocr.ocr_image("simple_text.jpg")
 
         # For simple layouts with no confidence data, default to 1.0
+        assert isinstance(result["confidence"], float)
+        assert result["confidence"] == 1.0
+
+    @patch("agentic_platform.tools.google_vision_ocr.vision.ImageAnnotatorClient")
+    def test_ocr_medium_layout_below_threshold(self, mock_client_class):
+        """Test OCR with medium-sized layout (~100 symbols) that's below complexity threshold.
+        
+        Documents with 100 symbols (like a typical letter) should return 1.0, not 0.95.
+        The threshold for complex layout is >150 symbols.
+        """
+        mock_client = MagicMock()
+        mock_client_class.return_value = mock_client
+
+        mock_full_text = MagicMock()
+        mock_full_text.description = "Medium length document with moderate symbol count"
+        mock_full_text.confidence = 0
+        
+        # 100 symbols - below 150 threshold, should get 1.0
+        symbols = []
+        for i in range(100):
+            mock_sym = MagicMock()
+            mock_sym.confidence = 0
+            symbols.append(mock_sym)
+        
+        mock_response = MagicMock()
+        mock_response.text_annotations = [mock_full_text] + symbols
+        mock_client.text_detection.return_value = mock_response
+
+        ocr = GoogleVisionOCR()
+        with patch("builtins.open", MagicMock(return_value=MagicMock(__enter__=MagicMock(return_value=MagicMock(read=MagicMock(return_value=b''))), __exit__=MagicMock(return_value=None)))):
+            result = ocr.ocr_image("medium_text.jpg")
+
+        # Below threshold (100 < 150), should return default 1.0
         assert isinstance(result["confidence"], float)
         assert result["confidence"] == 1.0
 

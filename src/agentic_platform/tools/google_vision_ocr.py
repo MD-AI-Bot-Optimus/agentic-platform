@@ -57,7 +57,7 @@ class GoogleVisionOCR:
                 # For complex layouts with many symbols but no confidence data,
                 # use text extraction completeness as fallback metric
                 total_symbols = len(texts) - 1
-                if total_symbols > 50:
+                if total_symbols > 150:
                     # Complex document (table, form, etc.) - more difficult for OCR
                     # But if text extracted, Google Vision succeeded, so higher confidence
                     confidence = 0.95  # Slightly reduced from 1.0 for complex layouts
