@@ -43,11 +43,20 @@ function App() {
 
   // MCP demo state
   const [mcpToolName, setMcpToolName] = useState('google_vision_ocr');
-  const [mcpArgs, setMcpArgs] = useState('{"image_path": "/path/to/image.jpg"}');
+  const [mcpArgs, setMcpArgs] = useState('{"image_path": "sample_data/letter.jpg"}');
   const [mcpResult, setMcpResult] = useState(null);
   const [mcpAvailableTools, setMcpAvailableTools] = useState([]);
   const [mcpLoading, setMcpLoading] = useState(false);
   const [mcpError, setMcpError] = useState(null);
+  
+  // Sample data files for quick selection
+  const sampleDataFiles = [
+    { path: 'sample_data/letter.jpg', name: 'Letter (handwritten)' },
+    { path: 'sample_data/handwriting.jpg', name: 'Handwriting Sample' },
+    { path: 'sample_data/numbers_gs150.jpg', name: 'Numbers Document' },
+    { path: 'sample_data/stock_gs200.jpg', name: 'Stock Image' },
+    { path: 'sample_data/ocr_sample_plaid.jpg', name: 'Plaid Pattern' },
+  ];
 
   // Load available MCP tools on mount
   React.useEffect(() => {
@@ -246,6 +255,39 @@ function App() {
                       </Box>
                     )}
 
+                    {/* Sample Data File Shortcuts (for google_vision_ocr) */}
+                    {mcpToolName === 'google_vision_ocr' && (
+                      <Box>
+                        <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                          Sample Files:
+                        </Typography>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                          {sampleDataFiles.map(file => (
+                            <Button
+                              key={file.path}
+                              variant="outlined"
+                              size="small"
+                              onClick={() => setMcpArgs(JSON.stringify({ image_path: file.path }))}
+                              sx={{ 
+                                textTransform: 'none',
+                                fontSize: '0.85rem',
+                                py: 0.8,
+                                justifyContent: 'flex-start',
+                                color: '#667eea',
+                                borderColor: '#667eea',
+                                '&:hover': { 
+                                  backgroundColor: '#e3f2fd',
+                                  borderColor: '#667eea'
+                                }
+                              }}
+                            >
+                              📄 {file.name}
+                            </Button>
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+
                     {/* Arguments Input */}
                     <TextField
                       label="Tool Arguments (JSON)"
@@ -253,7 +295,7 @@ function App() {
                       rows={4}
                       value={mcpArgs}
                       onChange={e => setMcpArgs(e.target.value)}
-                      placeholder='{"key": "value"}'
+                      placeholder='{"image_path": "sample_data/letter.jpg"}'
                       variant="outlined"
                       fullWidth
                       sx={{ fontFamily: 'monospace', fontSize: '0.9rem' }}
