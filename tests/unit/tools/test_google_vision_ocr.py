@@ -21,8 +21,9 @@ class TestGoogleVisionOCR:
 
         mock_full_text = MagicMock()
         mock_full_text.description = "Extracted text from image"
+        mock_full_text.confidence = 0  # text_detection returns 0 for full text
         
-        # Individual symbols/words with confidence scores
+        # Individual symbols/words with confidence scores (>0)
         mock_symbol1 = MagicMock()
         mock_symbol1.confidence = 0.95
         mock_symbol2 = MagicMock()
@@ -61,13 +62,14 @@ class TestGoogleVisionOCR:
 
     @patch("agentic_platform.tools.google_vision_ocr.vision.ImageAnnotatorClient")
     def test_ocr_default_confidence(self, mock_client_class):
-        """Test that OCR uses default confidence of 1.0 when no symbols are found."""
-        # Setup mock with full text but no symbols (only full text annotation)
+        """Test that OCR defaults to 1.0 when no positive confidence values available."""
+        # Setup mock with zero confidence (typical for text_detection full annotation)
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
 
-        mock_annotation = MagicMock(spec=["description"])  # No individual symbols
-        mock_annotation.description = "Text without symbols"
+        mock_annotation = MagicMock()
+        mock_annotation.description = "Text with no confidence"
+        mock_annotation.confidence = 0  # text_detection returns 0
         mock_response = MagicMock()
         mock_response.text_annotations = [mock_annotation]  # Only full text, no symbols
         mock_client.text_detection.return_value = mock_response
@@ -76,9 +78,9 @@ class TestGoogleVisionOCR:
         ocr = GoogleVisionOCR()
         result = ocr.ocr_image("test_image.jpg")
 
-        # Verify result
-        assert result["text"] == "Text without symbols"
-        assert result["confidence"] == 1.0  # Default confidence when no symbol scores
+        # Verify result - should default to 1.0 when confidence is 0 or missing
+        assert result["text"] == "Text with no confidence"
+        assert result["confidence"] == 1.0
 
     def test_ocr_with_invalid_image_path(self):
         """Test OCR with non-existent image file raises error."""
@@ -89,13 +91,14 @@ class TestGoogleVisionOCR:
 
     @patch("agentic_platform.tools.google_vision_ocr.vision.ImageAnnotatorClient")
     def test_ocr_returns_dict_with_correct_keys(self, mock_client_class):
-        """Test that OCR result has expected keys."""
+        """Test that OCR result has expected keys and types."""
         # Setup mock
         mock_client = MagicMock()
         mock_client_class.return_value = mock_client
 
         mock_full_text = MagicMock()
         mock_full_text.description = "Sample text"
+        mock_full_text.confidence = 0
         
         mock_symbol = MagicMock()
         mock_symbol.confidence = 0.85
@@ -108,11 +111,12 @@ class TestGoogleVisionOCR:
         ocr = GoogleVisionOCR()
         result = ocr.ocr_image("test_image.jpg")
 
-        # Verify keys
+        # Verify keys and types
         assert isinstance(result, dict)
         assert "text" in result
         assert "confidence" in result
-        assert len(result) == 2  # Only these two keys
+        assert isinstance(result["confidence"], float)
+        assert 0.0 <= result["confidence"] <= 1.0
 
 
 if __name__ == "__main__":

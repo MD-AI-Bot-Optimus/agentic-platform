@@ -25,32 +25,35 @@ class GoogleVisionOCR:
         # The first annotation is the full text
         full_text = texts[0].description
         
-        # Google Vision API returns confidence on the full_detection_confidence
-        # For text_detection, we can get confidence from response properties
-        # or calculate from the overall detection quality
+        # Google Vision text_detection API does not reliably provide confidence
+        # The confidence field on annotations may be 0 or missing
+        # Since Google Vision is highly accurate for text detection, we default to 1.0
+        # unless we can extract a meaningful confidence value
         
-        # Check if full annotation has confidence
-        if hasattr(texts[0], 'confidence') and texts[0].confidence is not None:
-            confidence = float(texts[0].confidence)
+        confidence = 1.0  # Default for text_detection
+        
+        # Try to get confidence from full annotation (usually 0 or missing for text_detection)
+        full_conf = getattr(texts[0], 'confidence', None)
+        if full_conf is not None and full_conf > 0:
+            confidence = float(full_conf)
             logger.info(f"Using full text annotation confidence: {confidence}")
-        else:
-            # The text_detection response may have a full_detection_confidence
-            # or we calculate from all detected symbols
+        
+        # Try to get confidence from individual symbols
+        if confidence == 1.0 and len(texts) > 1:
             symbol_confidences = []
             for i, text in enumerate(texts[1:], 1):
-                # Check for confidence attribute (may or may not exist)
                 conf = getattr(text, 'confidence', None)
-                if conf is not None:
+                if conf is not None and conf > 0:
                     symbol_confidences.append(float(conf))
                     logger.debug(f"Symbol {i}: confidence={conf}")
             
             if symbol_confidences:
                 confidence = sum(symbol_confidences) / len(symbol_confidences)
-                logger.info(f"Calculated confidence from {len(symbol_confidences)} symbols: {confidence}")
+                logger.info(f"Calculated confidence from {len(symbol_confidences)} symbols: {confidence:.4f}")
             else:
-                # Google Vision doesn't always return confidence for text_detection
-                # Default to 1.0 (high confidence) for detection, as Google Vision is generally very accurate
-                confidence = 1.0
-                logger.warning(f"No confidence scores available from API, using default: {confidence}")
+                logger.debug(f"No positive confidence values from {len(texts)-1} symbols, using default")
+        
+        # Ensure confidence is a float and within valid range [0.0, 1.0]
+        confidence = float(max(0.0, min(1.0, confidence)))
         
         return {"text": full_text, "confidence": confidence}
