@@ -4,6 +4,7 @@ steps:
     id: 'build'
     args:
       - 'build'
+      - '--no-cache'
       - '-t'
       - 'gcr.io/$PROJECT_ID/agentic-platform-api:$SHORT_SHA'
       - '-t'
