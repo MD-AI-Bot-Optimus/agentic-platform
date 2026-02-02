@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any
 
 import yaml
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Body
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -77,15 +77,15 @@ async def root():
 
 @app.post("/run-ocr")
 async def run_ocr_workflow(
-    image: UploadFile = File(...),
-    credentials_json: Optional[UploadFile] = File(None)
+    request: Request,
+    file_path: Optional[str] = Form(None)
 ) -> JSONResponse:
     """
     Execute OCR on an uploaded image using Google Vision API.
 
     Args:
-        image: Image file (JPEG, PNG, etc.)
-        credentials_json: Optional Google credentials JSON file
+        request: The FastAPI request object
+        file_path: Path to image file on server (for sample files)
 
     Returns:
         JSON response with OCR result, tool results, and audit log
@@ -93,25 +93,40 @@ async def run_ocr_workflow(
     Raises:
         HTTPException: If workflow execution fails
     """
-    # Save uploaded image to a temp file
-    with tempfile.NamedTemporaryFile(
-        delete=False, suffix=os.path.splitext(image.filename)[-1]
-    ) as img_tmp:
-        img_bytes = await image.read()
-        img_tmp.write(img_bytes)
-        img_path = img_tmp.name
+    # Parse form data manually
+    form = await request.form()
+    image = form.get("image")
+    credentials_json = form.get("credentials_json")
+    
+    if file_path:
+        # Use provided file path (for sample files)
+        # Convert relative path to absolute path relative to project root
+        if not os.path.isabs(file_path):
+            # Assume file_path is relative to project root
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            img_path = os.path.join(project_root, file_path)
+        else:
+            img_path = file_path
+        creds_path = None
+    else:
+        # Handle uploaded image
+        if not image:
+            raise HTTPException(status_code=400, detail="Either image file or file_path must be provided")
+        
+        # Save uploaded image to a temp file
+                img_tmp.write(img_bytes)
+                img_path = img_tmp.name
 
-    creds_path = None
-    if credentials_json:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as creds_tmp:
-            creds_bytes = await credentials_json.read()
-            creds_tmp.write(creds_bytes)
-            creds_path = creds_tmp.name
+            creds_path = None
+            if credentials_json:
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as creds_tmp:
+                    creds_bytes = await credentials_json.read()
+                    creds_tmp.write(creds_bytes)
+                    creds_path = creds_tmp.name
 
-    try:
         # Load OCR workflow
         workflow_path = os.path.join(
-            os.path.dirname(__file__), "../workflows/ocr_mvp.yaml"
+            os.path.dirname(__file__), "workflows/ocr_mvp.yaml"
         )
         with open(workflow_path, "r") as wf_file:
             wf_def = yaml.safe_load(wf_file)
@@ -144,7 +159,7 @@ async def run_ocr_workflow(
             text = tool_results[0]["result"]["text"]
             tool_results[0]["result"]["formatted_text_lines"] = text.splitlines()
 
-        logger.info(f"OCR workflow completed successfully for image: {image.filename}")
+        logger.info(f"OCR workflow completed successfully for image: {image.filename if image else 'sample file'}")
         return JSONResponse({
             "result": result,
             "tool_results": tool_results,
