@@ -48,6 +48,13 @@ function App() {
   const [mcpAvailableTools, setMcpAvailableTools] = useState([]);
   const [mcpLoading, setMcpLoading] = useState(false);
   const [mcpError, setMcpError] = useState(null);
+
+  // LangGraph Agent state
+  const [agentPrompt, setAgentPrompt] = useState('What is artificial intelligence?');
+  const [agentModel, setAgentModel] = useState('mock-llm');
+  const [agentResult, setAgentResult] = useState(null);
+  const [agentLoading, setAgentLoading] = useState(false);
+  const [agentError, setAgentError] = useState(null);
   
   // Sample data files for quick selection
   const sampleDataFiles = [
@@ -161,6 +168,31 @@ function App() {
       setMcpError(err.message);
     } finally {
       setMcpLoading(false);
+    }
+  };
+
+  const handleAgentSubmit = async (e) => {
+    e.preventDefault();
+    setAgentLoading(true);
+    setAgentError(null);
+    setAgentResult(null);
+    try {
+      const formData = new FormData();
+      formData.append('prompt', agentPrompt);
+      formData.append('model', agentModel);
+
+      const apiUrl = window.location.origin;
+      const response = await fetch(`${apiUrl}/agent/execute`, {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) throw new Error(`Agent API error: ${response.status}`);
+      const data = await response.json();
+      setAgentResult(data);
+    } catch (err) {
+      setAgentError(err.message);
+    } finally {
+      setAgentLoading(false);
     }
   };
 
@@ -323,6 +355,107 @@ function App() {
                       <Box sx={{ background: '#f6f8fa', borderRadius: 2, p: 2, fontSize: '0.85rem', overflowX: 'auto', fontFamily: 'monospace', maxHeight: '400px', overflowY: 'auto' }}>
                         <pre>{JSON.stringify(mcpResult, null, 2)}</pre>
                       </Box>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* LangGraph Agent Demo Section */}
+            <Grid item xs={12} sm={6}>
+              <Card sx={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)', borderRadius: 2, borderLeft: '4px solid #43e97b', height: '100%' }}>
+                <CardContent>
+                  <Typography variant="h5" fontWeight={600} gutterBottom>🤖 LangGraph Agent</Typography>
+                  <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                    Autonomous reasoning agent with multi-step tool orchestration
+                  </Typography>
+                  <Box component="form" onSubmit={handleAgentSubmit} sx={{ display: 'grid', gap: 2 }}>
+                    {/* Agent Prompt Input */}
+                    <TextField
+                      label="Agent Prompt"
+                      multiline
+                      rows={3}
+                      value={agentPrompt}
+                      onChange={e => setAgentPrompt(e.target.value)}
+                      placeholder="Ask the agent to do something..."
+                      fullWidth
+                    />
+
+                    {/* Model Selection */}
+                    <FormControl fullWidth>
+                      <InputLabel>LLM Model</InputLabel>
+                      <Select
+                        value={agentModel}
+                        label="LLM Model"
+                        onChange={e => setAgentModel(e.target.value)}
+                      >
+                        <MenuItem value="mock-llm">Mock LLM (Free/Demo)</MenuItem>
+                        <MenuItem value="claude-3.5-sonnet">Claude 3.5 Sonnet</MenuItem>
+                        <MenuItem value="gpt-4">GPT-4</MenuItem>
+                      </Select>
+                    </FormControl>
+
+                    {/* Submit Button */}
+                    <Button 
+                      type="submit" 
+                      variant="contained" 
+                      color="primary" 
+                      disabled={agentLoading || !agentPrompt} 
+                      sx={{ fontWeight: 600, fontSize: '1rem', py: 1.2 }}
+                    >
+                      {agentLoading ? <CircularProgress size={24} color="inherit" /> : 'Execute Agent'}
+                    </Button>
+                  </Box>
+
+                  {/* Error Display */}
+                  {agentError && <Alert severity="error" sx={{ mt: 2 }}>{agentError}</Alert>}
+
+                  {/* Agent Result Display */}
+                  {agentResult && (
+                    <Box sx={{ mt: 3 }}>
+                      <Typography variant="h6" fontWeight={600}>Agent Response</Typography>
+                      
+                      {/* Status */}
+                      <Box sx={{ mt: 2, p: 2, background: agentResult.status === 'success' ? '#e8f5e9' : '#fff3e0', borderRadius: 1, borderLeft: `4px solid ${agentResult.status === 'success' ? '#4caf50' : '#ff9800'}` }}>
+                        <Typography variant="body2"><strong>Status:</strong> {agentResult.status}</Typography>
+                        <Typography variant="body2"><strong>Iterations:</strong> {agentResult.iterations}</Typography>
+                      </Box>
+
+                      {/* Final Output */}
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="subtitle2" fontWeight={600}>Final Output</Typography>
+                        <Box sx={{ background: '#f6f8fa', borderRadius: 1, p: 2, fontSize: '0.95rem', fontStyle: 'italic', borderLeft: '3px solid #667eea' }}>
+                          {agentResult.final_output}
+                        </Box>
+                      </Box>
+
+                      {/* Reasoning Steps */}
+                      {agentResult.reasoning_steps && agentResult.reasoning_steps.length > 0 && (
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="subtitle2" fontWeight={600}>Reasoning Steps ({agentResult.reasoning_steps.length})</Typography>
+                          <Box sx={{ background: '#f6f8fa', borderRadius: 1, p: 2, fontSize: '0.85rem', fontFamily: 'monospace', maxHeight: '200px', overflowY: 'auto' }}>
+                            {agentResult.reasoning_steps.map((step, idx) => (
+                              <div key={idx} style={{ marginBottom: '8px', paddingBottom: '8px', borderBottom: '1px solid #e0e0e0' }}>
+                                <span style={{ color: '#667eea', fontWeight: 600 }}>Step {idx + 1}:</span> {step.substring(0, 100)}...
+                              </div>
+                            ))}
+                          </Box>
+                        </Box>
+                      )}
+
+                      {/* Tool Calls */}
+                      {agentResult.tool_calls && agentResult.tool_calls.length > 0 && (
+                        <Box sx={{ mt: 2 }}>
+                          <Typography variant="subtitle2" fontWeight={600}>Tools Used ({agentResult.tool_calls.length})</Typography>
+                          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
+                            {agentResult.tool_calls.map((call, idx) => (
+                              <Box key={idx} sx={{ background: '#e8eaf6', borderRadius: 1, px: 2, py: 0.5, fontSize: '0.85rem', color: '#667eea', fontWeight: 500 }}>
+                                🔧 {call.tool}
+                              </Box>
+                            ))}
+                          </Box>
+                        </Box>
+                      )}
                     </Box>
                   )}
                 </CardContent>

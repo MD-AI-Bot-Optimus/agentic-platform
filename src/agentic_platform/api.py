@@ -323,6 +323,60 @@ async def list_mcp_tools() -> JSONResponse:
         )
 
 
+@app.post("/agent/execute")
+async def execute_agent(prompt: str = Form(...), model: str = Form("mock-llm")):
+    """
+    Execute LangGraph agent with a prompt.
+    
+    Demonstrates autonomous reasoning with tool orchestration.
+    
+    Query parameters:
+    - prompt: User query for the agent
+    - model: LLM model to use (default: mock-llm for cost-free demo)
+    
+    Returns:
+    - status: success/incomplete/error
+    - final_output: Agent's response
+    - reasoning_steps: List of reasoning steps
+    - iterations: Number of iterations
+    - tool_calls: Tools executed
+    """
+    try:
+        from agentic_platform.adapters.langgraph_agent import LangGraphAgent
+        from agentic_platform.llm.mock_llm import MockLLM
+        
+        logger.info(f"Agent execution request: model={model}, prompt length={len(prompt)}")
+        
+        # Initialize agent with mock LLM
+        llm = MockLLM(model=model)
+        agent = LangGraphAgent(
+            model=model,
+            llm=llm,
+            max_iterations=3
+        )
+        
+        # Execute agent
+        result = agent.execute(prompt)
+        
+        logger.info(f"Agent execution complete: status={result.status}, iterations={result.iterations}")
+        
+        return JSONResponse({
+            "status": result.status,
+            "final_output": result.final_output,
+            "reasoning_steps": result.reasoning_steps,
+            "iterations": result.iterations,
+            "tool_calls": result.tool_calls,
+            "error": result.error
+        })
+        
+    except Exception as e:
+        logger.error(f"Agent execution failed: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Agent execution failed: {str(e)}"
+        )
+
+
 # Mount static UI files at root (MUST be after all API routes)
 # This serves /assets/*, /ui/, and falls back to index.html for SPA routing
 ui_dist_path = Path(__file__).parent.parent.parent / "ui" / "dist"
