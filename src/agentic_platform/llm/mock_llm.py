@@ -18,38 +18,23 @@ Usage:
 import logging
 from typing import Dict, Any, List, Optional
 from langchain_core.messages import BaseMessage, AIMessage, HumanMessage
-from langchain_core.language_model.llm import LLM
-from langchain_core.outputs.llm_result import LLMResult
+from langchain_core.runnables import Runnable
 
 logger = logging.getLogger(__name__)
 
 
-class MockLLM(LLM):
+class MockLLM(Runnable):
     """Mock LLM that returns predefined responses for testing."""
     
-    model: str = "mock-llm"
+    @property
+    def InputType(self):
+        """Input type for the runnable."""
+        return List[BaseMessage]
     
-    # Predefined responses for common prompts
-    MOCK_RESPONSES = {
-        "analyze": "Mock analysis complete. The document contains important information.",
-        "summarize": "Mock summary: This is a concise summary of the provided text.",
-        "extract": "Mock extraction: Key data extracted successfully.",
-        "classify": "Mock classification: Document classified as 'general'.",
-        "translate": "Mock translation: Translated to target language.",
-    }
-    
-    # Tool call patterns
-    TOOL_CALLS = [
-        {
-            "name": "google_vision_ocr",
-            "args": {"image_path": "document.jpg"},
-            "result": {
-                "text": "Mock OCR: Extracted text from image",
-                "confidence": 0.95,
-                "symbols_count": 150
-            }
-        }
-    ]
+    @property
+    def OutputType(self):
+        """Output type for the runnable."""
+        return AIMessage
     
     def __init__(self, model: str = "mock-llm", deterministic: bool = True, **kwargs):
         """
@@ -66,62 +51,47 @@ class MockLLM(LLM):
         self._call_count = 0
         logger.info(f"Initialized MockLLM (deterministic={deterministic})")
     
-    def _generate(
-        self,
-        messages: List[BaseMessage],
-        stop: Optional[List[str]] = None,
-        run_manager = None,
-        **kwargs: Any,
-    ) -> LLMResult:
-        """Generate mock response."""
+    def invoke(self, input: Any, config=None) -> AIMessage:
+        """Invoke the mock LLM."""
         self._call_count += 1
         
-        # Extract last message content
-        last_message = messages[-1].content if messages else ""
-        
-        # Determine response based on message content
-        response_content = self._get_mock_response(last_message)
-        
-        logger.debug(f"Mock LLM call #{self._call_count}: '{last_message[:50]}...' → '{response_content[:50]}...'")
-        
-        # Return as LLMResult
-        from langchain_core.outputs import Generation
-        return LLMResult(generations=[[Generation(text=response_content)]])
-    
-    def _get_mock_response(self, prompt: str) -> str:
-        """Get mock response based on prompt content."""
-        prompt_lower = prompt.lower()
-        
-        # Check for common keywords
-        for keyword, response in self.MOCK_RESPONSES.items():
-            if keyword in prompt_lower:
-                return response
-        
-        # Check for tool use patterns
-        if "call_tool" in prompt_lower or "invoke" in prompt_lower:
-            tool_call = self.TOOL_CALLS[self._call_count % len(self.TOOL_CALLS)]
-            return f"Mock tool call: {tool_call['name']} → {tool_call['result']}"
-        
-        # Default response
-        if "?" in prompt:
-            return "Mock LLM response: This is a deterministic mock response to your question."
+        # Handle both string input and message list input
+        if isinstance(input, str):
+            prompt_text = input
+        elif isinstance(input, list) and len(input) > 0:
+            last_message = input[-1]
+            prompt_text = last_message.content if hasattr(last_message, 'content') else str(last_message)
         else:
-            return "Mock LLM response: This is a deterministic mock response to your prompt."
-    
-    def invoke(self, input: str, **kwargs: Any) -> AIMessage:
-        """Invoke mock LLM and return AIMessage."""
-        response = self._get_mock_response(input)
+            prompt_text = str(input)
+        
+        # Generate deterministic response
+        response = self._generate_response(prompt_text)
         return AIMessage(content=response)
     
-    @property
-    def _llm_type(self) -> str:
-        """Return LLM type identifier."""
-        return "mock"
+    def _generate_response(self, prompt: str) -> str:
+        """Generate a mock response based on prompt."""
+        prompt_lower = prompt.lower()
+        
+        # Simple pattern matching for deterministic responses
+        if "ocr" in prompt_lower or "extract text" in prompt_lower:
+            return "I'll extract text from the image using OCR. The image contains important business information with good clarity."
+        elif "classify" in prompt_lower or "document type" in prompt_lower:
+            return "I'll classify the document. Based on the content, this appears to be a business document like an invoice or contract."
+        elif "sentiment" in prompt_lower or "emotion" in prompt_lower:
+            return "The sentiment of this text is positive. The language used is professional and constructive."
+        elif "summarize" in prompt_lower or "summary" in prompt_lower:
+            return "Here's a summary: The document contains key information about business processes and agreements."
+        elif "what is" in prompt_lower and "+" in prompt_lower:
+            # Simple math
+            if "2+2" in prompt or "2 + 2" in prompt:
+                return "2 + 2 = 4"
+            return "The result is calculated correctly."
+        else:
+            return "I understand your request and I'm ready to help process documents and extract information as needed."
     
-    def reset(self):
-        """Reset call counter."""
-        self._call_count = 0
-        logger.info("MockLLM call counter reset")
+    def batch(self, inputs, config=None, **kwargs):
+        """Batch invoke the mock LLM."""
+        return [self.invoke(input_item, config) for input_item in inputs]
 
 
 class DeterministicMockLLM(MockLLM):
@@ -145,13 +115,13 @@ class RandomMockLLM(MockLLM):
     def __init__(self, model: str = "mock-llm-random", **kwargs):
         super().__init__(model=model, deterministic=False, **kwargs)
     
-    def _get_mock_response(self, prompt: str) -> str:
+    def _generate_response(self, prompt: str) -> str:
         """Get varied mock response."""
         import random
         responses = [
-            "Mock response variant 1.",
-            "Mock response variant 2.",
-            "Mock response variant 3.",
-            super()._get_mock_response(prompt),  # Also include base response sometimes
+            "Mock response variant 1: Analysis complete.",
+            "Mock response variant 2: Processing successful.",
+            "Mock response variant 3: Task completed.",
+            super()._generate_response(prompt),  # Also include base response sometimes
         ]
         return random.choice(responses)
