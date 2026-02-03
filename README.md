@@ -101,7 +101,7 @@ docker run -p 8080:8080 agentic-platform
 
 ### Google Cloud Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive Cloud Run deployment guide with:
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for comprehensive Cloud Run deployment guide with:
 - Step-by-step GCP setup
 - Docker image building and pushing
 - Cloud Run configuration
