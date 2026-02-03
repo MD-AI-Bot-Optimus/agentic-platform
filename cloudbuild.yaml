@@ -1,6 +1,7 @@
 options:
   machineType: 'E2_HIGHCPU_8'
   logging: CLOUD_LOGGING_ONLY
+  serviceAccount: 'projects/agentic-platfrom/serviceAccounts/170705020917@cloudbuild.gserviceaccount.com'
 
 steps:
   # Build the Docker image
