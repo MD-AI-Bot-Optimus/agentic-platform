@@ -17,9 +17,12 @@ RUN pip install --no-cache-dir \
     pydantic>=2.0 \
     pydantic-settings>=2.0 \
     pyyaml \
+    jsonschema \
     google-cloud-vision \
     langgraph \
-    langchain
+    langchain \
+    python-dotenv \
+    requests
 
 # Copy application code
 COPY src/ src/
