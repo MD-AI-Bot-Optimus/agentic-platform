@@ -42,17 +42,21 @@ A production-ready, test-driven foundation for building multi-agent AI workflows
 - Advanced monitoring (LangSmith, W&B, Prometheus)
 - Infrastructure as Code (Terraform, Helm)
 
-##  Documentation
+## 📚 Documentation
 
 | Document | Purpose |
 |----------|---------|
-| [**Roadmap.md**](docs/roadmap.md) | TDD history (Phase 0-8) + 12-week tech stack expansion plan |
-| [**Architecture.md**](docs/architecture.md) | System design, component overview, current limitations |
-| [**API.md**](docs/api.md) | REST & MCP endpoints, confidence behavior, examples |
-| [**Adapters.md**](docs/adapters.md) | Tool patterns, MCP adapter, integrations (LangGraph stub) |
-| [**Testing.md**](docs/testing.md) | Testing strategy, coverage metrics (57 tests passing) |
-| [**DEPLOYMENT.md**](docs/DEPLOYMENT.md) | Cloud Run setup, GitHub triggers, build pipeline |
-| [**Decisions/**](docs/decisions/) | 8 Architecture Decision Records (ADRs 1-8) |
+| **[READY_FOR_PRODUCTION.md](docs/READY_FOR_PRODUCTION.md)** | 🎯 **Start here** - Overview, interview guide, deployment checklist |
+| [DEPLOYMENT.md](docs/DEPLOYMENT.md) | ☁️ Google Cloud Run deployment guide |
+| [CONTRIBUTING.md](docs/CONTRIBUTING.md) | 💻 Development standards and guidelines |
+| [CHECKLIST.md](docs/CHECKLIST.md) | ✅ Pre-deployment verification checklist |
+| [**MCP.md**](docs/MCP.md) | Model Context Protocol implementation & integration |
+| [**API.md**](docs/api.md) | REST API reference for all endpoints |
+| [**Architecture.md**](docs/architecture.md) | System design and component overview |
+| [**Adapters.md**](docs/adapters.md) | Tool registry and adapter patterns |
+| [**Testing.md**](docs/testing.md) | Testing strategy and test coverage |
+| [**Roadmap.md**](docs/roadmap.md) | TDD milestone history and project roadmap |
+| [**Decisions**](docs/decisions/) | Architecture Decision Records (ADRs 1-10) |
 | [**TECH_STACK_ANALYSIS.md**](TECH_STACK_ANALYSIS.md) | Gap analysis (28% current coverage) with roadmap |
 
 ## 🚀 Quick Start
