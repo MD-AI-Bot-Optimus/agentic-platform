@@ -147,6 +147,17 @@ function App() {
       setError('Please upload or select workflow and input files');
       return;
     }
+    
+    // Validate file sizes (prevent empty files)
+    if (workflowFile.size === 0) {
+      setError('Workflow file is empty');
+      return;
+    }
+    if (inputFile.size === 0) {
+      setError('Input file is empty');
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     setResult(null);
@@ -163,11 +174,15 @@ function App() {
       console.log('Response status:', response.status);
       const data = await response.json();
       console.log('Response data:', data);
-      if (!response.ok) throw new Error('API error: ' + response.status);
+      if (!response.ok) {
+        // Extract error detail from API response
+        const errorDetail = data?.detail || data?.message || `API error: ${response.status}`;
+        throw new Error(errorDetail);
+      }
       setResult(data);
     } catch (err) {
       console.error('Error:', err);
-      setError(err.message);
+      setError(err.message || 'An error occurred');
     } finally {
       setLoading(false);
     }
