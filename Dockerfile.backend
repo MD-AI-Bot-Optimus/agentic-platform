@@ -18,6 +18,7 @@ RUN pip install --no-cache-dir \
     pydantic-settings>=2.0 \
     pyyaml \
     jsonschema \
+    python-multipart \
     google-cloud-vision \
     langgraph \
     langchain \
