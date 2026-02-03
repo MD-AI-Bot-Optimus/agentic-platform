@@ -10,6 +10,9 @@ export default defineConfig({
       '/run-ocr': 'http://localhost:8003',
       '/mcp': 'http://localhost:8003',
       '/docs': 'http://localhost:8003',
+      '/sample_data': 'http://localhost:8003',
+      '/demo_workflow.yaml': 'http://localhost:8003',
+      '/demo_input.json': 'http://localhost:8003',
     },
   },
 });

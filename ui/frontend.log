@@ -1,0 +1,10 @@
+
+> agentic-platform-ui@0.1.0 dev
+> vite --host
+
+
+  VITE v4.5.14  ready in 292 ms
+
+  ➜  Local:   http://localhost:5173/static/
+  ➜  Network: http://192.168.1.233:5173/static/
+  ➜  press h to show help

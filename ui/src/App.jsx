@@ -1,33 +1,68 @@
 import React, { useState } from 'react';
 import { Container, Typography, Button, Card, CardContent, Box, Alert, CircularProgress, FormControl, InputLabel, Select, MenuItem, TextField, Grid } from '@mui/material';
+import pacificBg from './assets/pacific_bg.png';
 
-// Modern art background styles
+// Modern art background styles with pacific image from past
 const modernArtStyle = {
-  background: `
-    linear-gradient(135deg, #667eea 0%, #764ba2 25%),
-    linear-gradient(225deg, #f093fb 0%, #f5576c 25%),
-    linear-gradient(315deg, #4facfe 0%, #00f2fe 25%),
-    linear-gradient(45deg, #43e97b 0%, #38f9d7 25%)
-  `,
-  backgroundSize: '400% 400%',
-  animation: 'gradientShift 15s ease infinite',
+  backgroundImage: `url(${pacificBg})`,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center',
+  backgroundAttachment: 'fixed',
+  minHeight: '100vh',
+  width: '100%',
   position: 'relative',
+  transition: 'all 0.5s ease',
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.4)', // Increased transparency for better visibility
+    backdropFilter: 'blur(12px)',
+    zIndex: 0,
+  }
 };
 
-// Add global styles for background
+// Add global styles for background and animations
 const styleSheet = document.createElement('style');
 styleSheet.textContent = `
   @keyframes floatIn {
     0% { opacity: 0; transform: translateY(10px); }
     100% { opacity: 1; transform: translateY(0); }
   }
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  body, html {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    background-image: url(${pacificBg}) !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-attachment: fixed !important;
+    min-height: 100vh;
+  }
+  #root {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
+    background: transparent !important;
+  }
+  .MuiContainer-root {
+    background: transparent !important;
+  }
 `;
 document.head.appendChild(styleSheet);
 
-// API Base URL - Use environment variable or default to localhost for dev
+// API Base URL - Use empty string to use Vite proxy in dev, otherwise use production URL
 const API_BASE_URL = (typeof process !== 'undefined' && process.env?.REACT_APP_API_URL) || (
-  typeof window !== 'undefined' && window.location.hostname === 'localhost'
-    ? 'http://localhost:8003'
+  typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? '' // Use Vite proxy
     : 'https://agentic-platform-api-170705020917.us-central1.run.app'
 );
 
@@ -47,15 +82,9 @@ const defaultMcpTools = [
   }
 ];
 
-// API Base URL - Use environment variable or default to localhost for dev
-const API_BASE_URL = (typeof process !== 'undefined' && process.env?.REACT_APP_API_URL) || (
-  typeof window !== 'undefined' && window.location.hostname === 'localhost'
-    ? 'http://localhost:8003'
-    : 'https://agentic-platform-api-170705020917.us-central1.run.app'
-);
 
 function App() {
-  const [activeView, setActiveView] = useState('workflow');
+  const [activeView, setActiveView] = useState('ocr');
 
   // Workflow state
   const [workflowFile, setWorkflowFile] = useState(null);
@@ -223,7 +252,7 @@ function App() {
 
   return (
     <div style={{
-      backgroundColor: '#1a1a2e',
+      background: 'transparent',
       height: '100vh',
       overflow: 'hidden',
       position: 'relative',
@@ -337,6 +366,7 @@ function App() {
                               .then(res => res.blob())
                               .then(blob => {
                                 const imageFile = new File([blob], file.name, { type: blob.type });
+                                imageFile.path = file.path; // Preserve path for backend mock
                                 setOcrImage(imageFile);
                               })
                               .catch(err => {
@@ -378,7 +408,13 @@ function App() {
                           <div key={idx}>{line}</div>
                         ))
                       ) : (
-                        <span style={{ color: '#888' }}>[No text detected]</span>
+                        <Box sx={{ color: '#888' }}>
+                          {ocrResult.error ? (
+                            <span style={{ color: '#f44336' }}>Error: {ocrResult.error}</span>
+                          ) : (
+                            '[No text detected]'
+                          )}
+                        </Box>
                       )}
                     </Box>
                   </Box>

@@ -130,27 +130,30 @@ async def run_ocr_workflow(
     Raises:
         HTTPException: If workflow execution fails
     """
-    # Parse form data manually
-    form = await request.form()
-    image = form.get("image")
-    credentials_json = form.get("credentials_json")
-    
-    if file_path:
-        # Use provided file path (for sample files)
-        # Convert relative path to absolute path relative to project root
-        if not os.path.isabs(file_path):
-            # Assume file_path is relative to project root
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-            img_path = os.path.join(project_root, file_path)
-        else:
-            img_path = file_path
-        creds_path = None
-    else:
-        # Handle uploaded image
-        if not image:
-            raise HTTPException(status_code=400, detail="Either image file or file_path must be provided")
+    try:
+        # Parse form data manually
+        form = await request.form()
+        image = form.get("image")
+        credentials_json = form.get("credentials_json")
         
-        # Save uploaded image to a temp file
+        if file_path:
+            # Use provided file path (for sample files)
+            # Convert relative path to absolute path relative to project root
+            if not os.path.isabs(file_path):
+                # Assume file_path is relative to project root
+                project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                img_path = os.path.join(project_root, file_path)
+            else:
+                img_path = file_path
+            creds_path = None
+        else:
+            # Handle uploaded image
+            if not image:
+                raise HTTPException(status_code=400, detail="Either image file or file_path must be provided")
+            
+            # Save uploaded image to a temp file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as img_tmp:
+                img_bytes = await image.read()
                 img_tmp.write(img_bytes)
                 img_path = img_tmp.name
 
@@ -163,7 +166,7 @@ async def run_ocr_workflow(
 
         # Load OCR workflow
         workflow_path = os.path.join(
-            os.path.dirname(__file__), "workflows/ocr_mvp.yaml"
+            os.path.dirname(os.path.dirname(__file__)), "workflows/ocr_mvp.yaml"
         )
         with open(workflow_path, "r") as wf_file:
             wf_def = yaml.safe_load(wf_file)
@@ -187,22 +190,26 @@ async def run_ocr_workflow(
         )
 
         # Format results
-        job_id = result.get("job_id", "job-1")  # Get job_id from result, fallback to job-1
+        job_id = result.get("job_id", "job-1")
         audit_events = [vars(e) for e in audit_log.get_events(job_id)]
         tool_results = result.get("tool_results", [])
 
-        # Add formatted text lines for better UI display
-        if (tool_results and
-            "result" in tool_results[0] and
-            "text" in tool_results[0]["result"]):
-            text = tool_results[0]["result"]["text"]
-            tool_results[0]["result"]["formatted_text_lines"] = text.splitlines()
+        formatted_lines = []
+        ocr_error = None
+        if tool_results:
+            first_res = tool_results[0].get("result", {})
+            text = first_res.get("text", "")
+            ocr_error = first_res.get("error")
+            if text:
+                formatted_lines = text.splitlines()
 
         logger.info(f"OCR workflow completed successfully for image: {image.filename if image else 'sample file'}")
         return JSONResponse({
             "result": result,
             "tool_results": tool_results,
-            "audit_log": audit_events
+            "audit_log": audit_events,
+            "formatted_text_lines": formatted_lines,
+            "error": ocr_error
         })
 
     except Exception as e:
@@ -428,7 +435,6 @@ async def list_mcp_tools() -> JSONResponse:
         )
 
 
-<<<<<<< HEAD
 @app.post("/agent/execute")
 async def execute_agent(prompt: str = Form(...), model: str = Form("mock-llm")):
     """
@@ -450,7 +456,7 @@ async def execute_agent(prompt: str = Form(...), model: str = Form("mock-llm")):
     """
     try:
         from agentic_platform.adapters.langgraph_agent import LangGraphAgent
-        from agentic_platform.llm import get_llm_model, LLMConfig, validate_llm_setup
+        from agentic_platform.llm import get_llm_model, validate_llm_setup
         
         logger.info(f"Agent execution request: model={model}, prompt length={len(prompt)}")
         
@@ -553,10 +559,3 @@ if ui_dist_path.exists():
         
         # Fallback
         return {"detail": "Not Found"}
-=======
-# Mount static UI files at root (MUST be after all API routes)
-# This serves /assets/*, /ui/, and falls back to index.html for SPA routing
-# ui_dist_path = Path(__file__).parent.parent.parent / "ui" / "dist"
-# if ui_dist_path.exists():
-#     app.mount("", StaticFiles(directory=ui_dist_path, html=True), name="static")
->>>>>>> 992fa44a (Fix OCR and Workflow 422 errors: serve demo files and sample images from backend)

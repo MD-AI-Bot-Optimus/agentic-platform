@@ -1,0 +1,21 @@
+INFO:     Started server process [67745]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
+INFO:     127.0.0.1:62981 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63074 - "GET /docs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63074 - "GET /openapi.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63151 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63153 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63155 - "GET /sample_data/numbers_gs150.jpg HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63158 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63165 - "GET /sample_data/stock_gs200.jpg HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63168 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63174 - "POST /mcp/request HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63178 - "GET /demo_workflow.yaml HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63181 - "GET /demo_input.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63184 - "POST /run-workflow/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63198 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63200 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63205 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63207 - "GET /mcp/tools HTTP/1.1" 200 OK
