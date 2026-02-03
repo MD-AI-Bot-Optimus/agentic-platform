@@ -228,26 +228,62 @@ async def run_ocr_workflow(
 
 @app.post("/run-workflow/")
 async def run_workflow(
-    workflow: UploadFile = File(...),
-    input_artifact: UploadFile = File(...),
-    adapter: str = Form("mcp")
+    workflow: UploadFile = File(..., description="YAML workflow definition file"),
+    input_artifact: UploadFile = File(..., description="JSON input artifact for the workflow"),
+    adapter: Optional[str] = Form("mcp", description="Tool adapter to use (mcp or langgraph)")
 ) -> JSONResponse:
     """
     Execute a workflow defined in YAML with a JSON input artifact.
 
-    Args:
-        workflow: YAML workflow definition file
-        input_artifact: JSON input artifact for the workflow
-        adapter: Tool adapter to use ('mcp' or 'langgraph', default: 'mcp')
+    **Parameters:**
+    - **workflow**: YAML file with workflow definition (required). Must have `nodes` and `edges` keys.
+    - **input_artifact**: JSON file with input data for the workflow (required)
+    - **adapter**: Tool adapter to use - 'mcp' or 'langgraph' (optional, defaults to 'mcp')
 
-    Returns:
-        JSON response with workflow result, tool results, and audit log
+    **Workflow YAML Format:**
+    ```yaml
+    nodes:
+      - id: start
+        type: start
+      - id: step_name
+        type: tool
+        tool: tool_name
+        args:
+          arg1: value1
+      - id: end
+        type: end
+    edges:
+      - from: start
+        to: step_name
+      - from: step_name
+        to: end
+    ```
 
-    Raises:
-        HTTPException: If workflow definition is malformed or execution fails
+    **Returns:**
+    - `result`: Workflow execution result with job_id, status, and tool_results
+    - `tool_results`: Array of tool execution results
+    - `audit_log`: Audit trail of all events
+
+    **Raises:**
+    - 400: If workflow YAML or input JSON is malformed
+    - 422: If workflow execution fails
     """
+    # Validate file uploads
+    if not workflow:
+        raise HTTPException(status_code=422, detail="workflow file is required")
+    if not input_artifact:
+        raise HTTPException(status_code=422, detail="input_artifact file is required")
+    
+    # Parse workflow YAML
     try:
-        wf_def = yaml.safe_load(await workflow.read())
+        workflow_content = await workflow.read()
+        if not workflow_content:
+            raise ValueError("Workflow file is empty")
+        wf_def = yaml.safe_load(workflow_content)
+        if not wf_def:
+            raise ValueError("Workflow YAML is empty")
+        if "nodes" not in wf_def or "edges" not in wf_def:
+            raise ValueError("Workflow must contain 'nodes' and 'edges' keys")
     except Exception as e:
         logger.error(f"Malformed workflow YAML: {str(e)}")
         raise HTTPException(
@@ -255,8 +291,13 @@ async def run_workflow(
             detail=f"Malformed workflow YAML: {str(e)}"
         )
 
+    # Parse input JSON
     try:
-        input_data = json.loads((await input_artifact.read()).decode())
+        input_content = await input_artifact.read()
+        if not input_content:
+            input_data = {}
+        else:
+            input_data = json.loads(input_content.decode())
     except Exception as e:
         logger.error(f"Malformed input JSON: {str(e)}")
         raise HTTPException(
@@ -264,8 +305,7 @@ async def run_workflow(
             detail=f"Malformed input JSON: {str(e)}"
         )
 
-    # Select adapter - for now, use ToolRegistry for all adapters
-    # In the future, this can be extended to support different tool adapters
+    # Select adapter
     tool_client = tool_registry
 
     try:
@@ -276,7 +316,7 @@ async def run_workflow(
             tool_client=tool_client,
             audit_log=audit_log
         )
-        job_id = result.get("job_id", "job-1")  # Get job_id from result, fallback to job-1
+        job_id = result.get("job_id", "job-1")
         audit_events = [vars(e) for e in audit_log.get_events(job_id)]
         logger.info(f"Workflow executed successfully with adapter: {adapter}")
         return JSONResponse({
