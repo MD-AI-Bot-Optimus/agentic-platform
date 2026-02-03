@@ -22,9 +22,9 @@ from fastapi.staticfiles import StaticFiles
 
 from agentic_platform.audit.audit_log import InMemoryAuditLog
 from agentic_platform.tools.tool_registry import ToolRegistry
-from agentic_platform.adapters.mcp_adapter import MCPAdapter
 from agentic_platform.adapters.mcp_server import MCPServer
-from agentic_platform.adapters.langgraph_adapter import LangGraphAdapter
+# from agentic_platform.adapters.mcp_adapter import MCPAdapter
+# from agentic_platform.adapters.langgraph_adapter import LangGraphAdapter
 from agentic_platform.workflow import engine
 
 logger = logging.getLogger(__name__)
@@ -75,7 +75,44 @@ async def root():
     }
 
 
-@app.post("/run-ocr")
+@app.get("/demo_workflow.yaml")
+async def get_demo_workflow():
+    """Serve demo workflow YAML file."""
+    demo_path = Path(__file__).parent.parent.parent / "demo_workflow.yaml"
+    if demo_path.exists():
+        return FileResponse(demo_path, media_type="application/x-yaml", filename="demo_workflow.yaml")
+    raise HTTPException(status_code=404, detail="Demo workflow file not found")
+
+
+@app.get("/demo_input.json")
+async def get_demo_input():
+    """Serve demo input JSON file."""
+    demo_path = Path(__file__).parent.parent.parent / "demo_input.json"
+    if demo_path.exists():
+        return FileResponse(demo_path, media_type="application/json", filename="demo_input.json")
+    raise HTTPException(status_code=404, detail="Demo input file not found")
+
+
+@app.get("/sample_data/{file_path:path}")
+async def get_sample_data(file_path: str):
+    """Serve sample data files (images, etc.)."""
+    sample_file = Path(__file__).parent.parent.parent / "sample_data" / file_path
+    
+    # Security check: prevent directory traversal
+    try:
+        sample_file = sample_file.resolve()
+        sample_dir = (Path(__file__).parent.parent.parent / "sample_data").resolve()
+        if not str(sample_file).startswith(str(sample_dir)):
+            raise HTTPException(status_code=403, detail="Access denied")
+    except Exception:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    if sample_file.exists() and sample_file.is_file():
+        return FileResponse(sample_file)
+    raise HTTPException(status_code=404, detail="Sample file not found")
+
+
+@app.post("/run-ocr/")
 async def run_ocr_workflow(
     request: Request,
     file_path: Optional[str] = Form(None)
@@ -131,10 +168,12 @@ async def run_ocr_workflow(
         with open(workflow_path, "r") as wf_file:
             wf_def = yaml.safe_load(wf_file)
 
-        # Prepare workflow input
+        # Prepare workflow input - wrap in "inputs" to match YAML template references
         input_data = {
-            "image_path": img_path,
-            "credentials_json": creds_path or ""
+            "inputs": {
+                "image_path": img_path,
+                "credentials_json": creds_path or ""
+            }
         }
 
         # Execute workflow
@@ -218,17 +257,9 @@ async def run_workflow(
             detail=f"Malformed input JSON: {str(e)}"
         )
 
-    # Select adapter
-    if adapter == "langgraph":
-        tool_client = LangGraphAdapter()
-    elif adapter == "mcp":
-        tool_client = MCPAdapter()
-    else:
-        logger.error(f"Invalid adapter: {adapter}")
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid adapter: {adapter}"
-        )
+    # Select adapter - for now, use ToolRegistry for all adapters
+    # In the future, this can be extended to support different tool adapters
+    tool_client = tool_registry
 
     try:
         audit_log = InMemoryAuditLog()
@@ -397,6 +428,7 @@ async def list_mcp_tools() -> JSONResponse:
         )
 
 
+<<<<<<< HEAD
 @app.post("/agent/execute")
 async def execute_agent(prompt: str = Form(...), model: str = Form("mock-llm")):
     """
@@ -521,3 +553,10 @@ if ui_dist_path.exists():
         
         # Fallback
         return {"detail": "Not Found"}
+=======
+# Mount static UI files at root (MUST be after all API routes)
+# This serves /assets/*, /ui/, and falls back to index.html for SPA routing
+# ui_dist_path = Path(__file__).parent.parent.parent / "ui" / "dist"
+# if ui_dist_path.exists():
+#     app.mount("", StaticFiles(directory=ui_dist_path, html=True), name="static")
+>>>>>>> 992fa44a (Fix OCR and Workflow 422 errors: serve demo files and sample images from backend)

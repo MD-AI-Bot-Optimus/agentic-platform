@@ -1,15 +1,17 @@
-# Example workflow YAML for CLI demo
+# Example workflow YAML for OCR Demo
 nodes:
   - id: start
     type: start
-  - id: step1
+  - id: ocr_step
     type: tool
-    tool: summarize
-    model: gpt-4
+    tool: google_vision_ocr
+    args:
+      image_path: "sample_data/sample_image.png"
+      credentials_json: ""
   - id: end
     type: end
 edges:
   - from: start
-    to: step1
-  - from: step1
+    to: ocr_step
+  - from: ocr_step
     to: end

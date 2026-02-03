@@ -1,1 +1,1 @@
-{"text": "This is a test input for the workflow CLI demo."}
+{"inputs": {"image_path": "sample_data/sample_image.png", "credentials_json": ""}}

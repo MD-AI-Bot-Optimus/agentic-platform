@@ -1,6 +1,30 @@
 from agentic_platform.core.types import AuditEvent
 from agentic_platform.core.ids import generate_job_id
 
+def resolve_args(args, input_artifact):
+    """Resolve template strings in args using input_artifact."""
+    if not args:
+        return input_artifact
+    resolved = {}
+    for key, value in args.items():
+        if isinstance(value, str) and value.startswith("${") and value.endswith("}"):
+            # Extract path like "inputs.image_path"
+            path = value[2:-1]  # Remove ${}
+            parts = path.split(".")
+            current = input_artifact
+            for part in parts:
+                if isinstance(current, dict):
+                    current = current.get(part)
+                else:
+                    current = None
+                    break
+                if current is None:
+                    break
+            resolved[key] = current
+        else:
+            resolved[key] = value
+    return resolved
+
 def run(wf_def, input_artifact, tool_client, audit_log, stop_at_node=None, return_state=False, resume_state=None):
     job_id = generate_job_id()
     node_map = {n["id"]: n for n in wf_def["nodes"]}
@@ -66,7 +90,8 @@ def run(wf_def, input_artifact, tool_client, audit_log, stop_at_node=None, retur
                 status="started"
             ))
             try:
-                tool_result = tool_client.call(next_node["tool"], input_artifact)
+                tool_args = resolve_args(next_node.get("args"), input_artifact)
+                tool_result = tool_client.call(next_node["tool"], tool_args)
                 tool_results.append({"node_id": next_node["id"], "result": tool_result})
                 audit_log.emit(AuditEvent(
                     event_type="STEP_ENDED",

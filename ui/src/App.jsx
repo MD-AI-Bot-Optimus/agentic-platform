@@ -1,6 +1,29 @@
 import React, { useState } from 'react';
 import { Container, Typography, Button, Card, CardContent, Box, Alert, CircularProgress, FormControl, InputLabel, Select, MenuItem, TextField } from '@mui/material';
 
+// Default MCP tools list (fallback when API is unavailable)
+const defaultMcpTools = [
+  {
+    name: 'google_vision_ocr',
+    description: 'Extract text from images using Google Cloud Vision API',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        image_path: { type: 'string', description: 'Path to the image file to OCR.' },
+        credentials_json: { type: 'string', description: 'Path to Google credentials JSON file.' }
+      },
+      required: ['image_path']
+    }
+  }
+];
+
+// API Base URL - Use environment variable or default to localhost for dev
+const API_BASE_URL = (typeof process !== 'undefined' && process.env?.REACT_APP_API_URL) || (
+  typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:8003'
+    : 'https://agentic-platform-api-170705020917.us-central1.run.app'
+);
+
 function App() {
   const [activeView, setActiveView] = useState('workflow');
 
@@ -25,7 +48,7 @@ function App() {
   const [mcpAvailableTools, setMcpAvailableTools] = useState([]);
   const [mcpLoading, setMcpLoading] = useState(false);
   const [mcpError, setMcpError] = useState(null);
-  
+
   // Sample data files for quick selection
   const sampleDataFiles = [
     { path: 'sample_data/letter.jpg', name: 'Letter (handwritten)' },
@@ -38,9 +61,33 @@ function App() {
     { path: 'sample_data/sample_image.png', name: 'Basic Sample' },
   ];
 
-  // Workflow Handler
+  // Load available MCP tools on mount
+  React.useEffect(() => {
+    const loadMcpTools = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/mcp/tools`);
+        if (response.ok) {
+          const data = await response.json();
+          setMcpAvailableTools(data.tools || defaultMcpTools);
+        } else {
+          // Fallback to default tools if API fails
+          setMcpAvailableTools(defaultMcpTools);
+        }
+      } catch (err) {
+        console.error('Failed to load MCP tools:', err);
+        // Fallback to default tools if fetch fails
+        setMcpAvailableTools(defaultMcpTools);
+      }
+    };
+    loadMcpTools();
+  }, []);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!workflowFile || !inputFile) {
+      setError('Please upload or select workflow and input files');
+      return;
+    }
     setLoading(true);
     setError(null);
     setResult(null);
@@ -49,15 +96,18 @@ function App() {
     formData.append('input_artifact', inputFile);
     formData.append('adapter', adapter);
     try {
-      const apiUrl = window.location.origin;
-      const response = await fetch(`${apiUrl}/run-workflow/`, {
+      // Use direct backend URL
+      const response = await fetch(`${API_BASE_URL}/run-workflow/`, {
         method: 'POST',
         body: formData,
       });
-      if (!response.ok) throw new Error('API error: ' + response.status);
+      console.log('Response status:', response.status);
       const data = await response.json();
+      console.log('Response data:', data);
+      if (!response.ok) throw new Error('API error: ' + response.status);
       setResult(data);
     } catch (err) {
+      console.error('Error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -71,7 +121,7 @@ function App() {
     setOcrError(null);
     setOcrResult(null);
     const formData = new FormData();
-    
+
     // Check if it's a sample file (has path property) or uploaded file
     if (ocrImage && ocrImage.path) {
       // Sample file - send file_path as form field
@@ -84,10 +134,9 @@ function App() {
       setOcrLoading(false);
       return;
     }
-    
+
     try {
-      const apiUrl = window.location.origin;
-      const response = await fetch(`${apiUrl}/run-ocr`, {
+      const response = await fetch(`${API_BASE_URL}/run-ocr/`, {
         method: 'POST',
         body: formData,
       });
@@ -108,16 +157,28 @@ function App() {
     setMcpError(null);
     setMcpResult(null);
     try {
-      const apiUrl = window.location.origin;
-      let args = JSON.parse(mcpArgs);
-      const response = await fetch(`${apiUrl}/mcp/call-tool`, {
+      let args;
+      try {
+        args = JSON.parse(mcpArgs);
+      } catch (e) {
+        setMcpError(`Invalid JSON arguments: ${e.message}`);
+        setMcpLoading(false);
+        return;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/mcp/request`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          tool_name: mcpToolName,
-          arguments: args,
+          jsonrpc: "2.0",
+          method: "tools/call",
+          params: {
+            name: mcpToolName,
+            arguments: args,
+          },
+          id: 1,
         }),
       });
       if (!response.ok) throw new Error('API error: ' + response.status);
@@ -130,25 +191,8 @@ function App() {
     }
   };
 
-  // Load available MCP tools on mount
-  React.useEffect(() => {
-    const loadMcpTools = async () => {
-      try {
-        const apiUrl = window.location.origin;
-        const response = await fetch(`${apiUrl}/mcp/tools`);
-        if (response.ok) {
-          const data = await response.json();
-          setMcpAvailableTools(data.tools || []);
-        }
-      } catch (err) {
-        console.error('Failed to load MCP tools:', err);
-      }
-    };
-    loadMcpTools();
-  }, []);
-
   return (
-    <div style={{ 
+    <div style={{
       backgroundColor: '#1a1a2e',
       height: '100vh',
       overflow: 'hidden',
@@ -225,23 +269,32 @@ function App() {
               ⚙️ Workflow
             </Button>
           </Box>
-          
+
           {/* OCR Demo Section */}
           {activeView === 'ocr' && (
             <Card sx={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)', borderRadius: 2, borderTop: '4px solid #667eea' }}>
               <CardContent>
                 <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#667eea' }}>📷 OCR Demonstration</Typography>
                 <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>Extract text from images using Google Vision API</Typography>
-                
+
                 <Box component="form" onSubmit={handleOcrSubmit} sx={{ display: 'grid', gap: 2 }}>
-                  <Button variant="contained" component="label">
-                    Upload Image for OCR
-                    <input type="file" accept="image/*" hidden onChange={e => setOcrImage(e.target.files[0])} />
-                  </Button>
-                  
-                  {/* Sample Images */}
                   <Box>
-                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>Sample Images:</Typography>
+                    <Button variant="contained" component="label" sx={{ mb: 1, width: '100%' }}>
+                      Upload Image for OCR
+                      <input type="file" accept="image/*" hidden onChange={e => setOcrImage(e.target.files[0])} />
+                    </Button>
+                    {ocrImage && (
+                      <Typography variant="body2" sx={{ color: '#4caf50', fontWeight: 500 }}>
+                        ✓ Image: {ocrImage.name}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  {/* Sample Files for OCR */}
+                  <Box>
+                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                      📝 Load Sample Image:
+                    </Typography>
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
                       {sampleDataFiles.map(file => (
                         <Button
@@ -249,18 +302,39 @@ function App() {
                           variant="outlined"
                           size="small"
                           onClick={() => {
-                            // For demo purposes, we'll use the file path directly
-                            // In a real app, you'd need to fetch the file or use a different approach
-                            setOcrImage({ name: file.name, path: file.path });
+                            // Fetch the sample image file from backend
+                            fetch(`${API_BASE_URL}/${file.path}`)
+                              .then(res => res.blob())
+                              .then(blob => {
+                                const imageFile = new File([blob], file.name, { type: blob.type });
+                                setOcrImage(imageFile);
+                              })
+                              .catch(err => {
+                                console.error(`Failed to load ${file.name}:`, err);
+                                setOcrError(`Failed to load ${file.name}`);
+                              });
+                          }}
+                          sx={{
+                            textTransform: 'none',
+                            fontSize: '0.85rem',
+                            py: 0.8,
+                            justifyContent: 'flex-start',
+                            color: '#667eea',
+                            borderColor: '#667eea',
+                            backgroundColor: ocrImage?.name === file.name ? '#e3f2fd' : 'transparent',
+                            '&:hover': {
+                              backgroundColor: '#e3f2fd',
+                              borderColor: '#667eea'
+                            }
                           }}
                         >
-                          {file.name}
+                          {ocrImage?.name === file.name ? '✓ ' : ''}📄 {file.name}
                         </Button>
                       ))}
                     </Box>
                   </Box>
-                  
-                  <Button type="submit" variant="contained" color="primary" disabled={ocrLoading || !ocrImage}>
+
+                  <Button type="submit" variant="contained" color="primary" disabled={ocrLoading || !ocrImage} sx={{ fontWeight: 600, fontSize: '1rem', py: 1.2 }}>
                     {ocrLoading ? <CircularProgress size={24} color="inherit" /> : 'Run OCR'}
                   </Button>
                 </Box>
@@ -289,7 +363,7 @@ function App() {
               <CardContent>
                 <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#764ba2' }}>🔧 MCP Tool Tester</Typography>
                 <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>Call any MCP-registered tool directly with JSON-RPC 2.0</Typography>
-                
+
                 <Box component="form" onSubmit={handleMcpCall} sx={{ display: 'grid', gap: 2 }}>
                   <FormControl fullWidth>
                     <InputLabel id="mcp-tool-label">Select Tool</InputLabel>
@@ -332,7 +406,7 @@ function App() {
                     placeholder='{"image_path": "sample_data/letter.jpg"}'
                     variant="outlined"
                   />
-                  <Button type="submit" variant="contained" color="primary" disabled={mcpLoading}>
+                  <Button type="submit" variant="contained" color="primary" disabled={mcpLoading} sx={{ fontWeight: 600, fontSize: '1rem', py: 1.2 }}>
                     {mcpLoading ? <CircularProgress size={24} color="inherit" /> : 'Call Tool'}
                   </Button>
                 </Box>
@@ -356,14 +430,101 @@ function App() {
                 <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>Upload workflow YAML and input JSON to execute</Typography>
 
                 <Box component="form" onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2 }}>
-                  <Button variant="contained" component="label">
-                    Upload Workflow YAML
-                    <input type="file" accept=".yaml,.yml" hidden onChange={e => setWorkflowFile(e.target.files[0])} />
-                  </Button>
-                  <Button variant="contained" component="label">
-                    Upload Input JSON
-                    <input type="file" accept=".json" hidden onChange={e => setInputFile(e.target.files[0])} />
-                  </Button>
+                  <Box>
+                    <Button variant="contained" component="label" sx={{ mb: 1, width: '100%' }}>
+                      Upload Workflow YAML
+                      <input type="file" accept=".yaml,.yml" hidden onChange={e => setWorkflowFile(e.target.files[0])} />
+                    </Button>
+                    {workflowFile && (
+                      <Typography variant="body2" sx={{ color: '#4caf50', fontWeight: 500 }}>
+                        ✓ Workflow: {workflowFile.name}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  <Box>
+                    <Button variant="contained" component="label" sx={{ mb: 1, width: '100%' }}>
+                      Upload Input JSON
+                      <input type="file" accept=".json" hidden onChange={e => setInputFile(e.target.files[0])} />
+                    </Button>
+                    {inputFile && (
+                      <Typography variant="body2" sx={{ color: '#4caf50', fontWeight: 500 }}>
+                        ✓ Input: {inputFile.name}
+                      </Typography>
+                    )}
+                  </Box>
+
+                  {/* Sample Files for Workflow */}
+                  <Box>
+                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                      📝 Load Sample Files:
+                    </Typography>
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 1 }}>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => {
+                          fetch(`${API_BASE_URL}/demo_workflow.yaml`)
+                            .then(res => res.text())
+                            .then(text => {
+                              const file = new File([text], 'demo_workflow.yaml', { type: 'application/x-yaml' });
+                              setWorkflowFile(file);
+                            })
+                            .catch(err => {
+                              console.error('Failed to load demo workflow:', err);
+                              setError('Failed to load demo workflow');
+                            });
+                        }}
+                        sx={{
+                          textTransform: 'none',
+                          fontSize: '0.85rem',
+                          py: 0.8,
+                          justifyContent: 'flex-start',
+                          color: '#764ba2',
+                          borderColor: '#764ba2',
+                          backgroundColor: workflowFile?.name === 'demo_workflow.yaml' ? '#f3e5f5' : 'transparent',
+                          '&:hover': {
+                            backgroundColor: '#f3e5f5',
+                            borderColor: '#764ba2'
+                          }
+                        }}
+                      >
+                        {workflowFile?.name === 'demo_workflow.yaml' ? '✓ ' : ''}📄 Demo Workflow (OCR)
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() => {
+                          fetch(`${API_BASE_URL}/demo_input.json`)
+                            .then(res => res.text())
+                            .then(text => {
+                              const file = new File([text], 'demo_input.json', { type: 'application/json' });
+                              setInputFile(file);
+                            })
+                            .catch(err => {
+                              console.error('Failed to load demo input:', err);
+                              setError('Failed to load demo input');
+                            });
+                        }}
+                        sx={{
+                          textTransform: 'none',
+                          fontSize: '0.85rem',
+                          py: 0.8,
+                          justifyContent: 'flex-start',
+                          color: '#764ba2',
+                          borderColor: '#764ba2',
+                          backgroundColor: inputFile?.name === 'demo_input.json' ? '#f3e5f5' : 'transparent',
+                          '&:hover': {
+                            backgroundColor: '#f3e5f5',
+                            borderColor: '#764ba2'
+                          }
+                        }}
+                      >
+                        {inputFile?.name === 'demo_input.json' ? '✓ ' : ''}📄 Demo Input (Sample Data)
+                      </Button>
+                    </Box>
+                  </Box>
+
                   <FormControl fullWidth>
                     <InputLabel id="adapter-label">Adapter</InputLabel>
                     <Select
@@ -385,7 +546,7 @@ function App() {
                 {result && (
                   <Box sx={{ mt: 3 }}>
                     <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Workflow Results</Typography>
-                    
+
                     <Box sx={{ mb: 2 }}>
                       <Typography variant="subtitle2" fontWeight={600}>Result Output</Typography>
                       <Box component="pre" sx={{ background: '#f6f8fa', borderRadius: 2, p: 2, fontSize: '0.85rem', overflowX: 'auto', maxHeight: '300px', overflowY: 'auto' }}>

@@ -57,3 +57,14 @@ coverage.xml
 
 # Google Cloud credentials (do not commit)
 sample_data/google_credentials.json
+
+# Environment variables
+.env
+.env.local
+
+# Node.js
+node_modules/
+ui/node_modules/
+
+# OS files
+.DS_Store

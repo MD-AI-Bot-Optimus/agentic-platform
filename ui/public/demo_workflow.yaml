@@ -1,0 +1,15 @@
+# Example workflow YAML for CLI demo
+nodes:
+  - id: start
+    type: start
+  - id: step1
+    type: tool
+    tool: summarize
+    model: gpt-4
+  - id: end
+    type: end
+edges:
+  - from: start
+    to: step1
+  - from: step1
+    to: end
