@@ -24,5 +24,9 @@ RUN pip install --no-cache-dir \
 # Copy application code
 COPY src/ src/
 
+# Set Python path
+ENV PYTHONPATH=/app/src
+ENV PYTHONUNBUFFERED=1
+
 # Run with dynamic port from environment, defaulting to 8080
 CMD ["sh", "-c", "python -m uvicorn src.agentic_platform.api:app --host 0.0.0.0 --port ${PORT:-8080}"]
