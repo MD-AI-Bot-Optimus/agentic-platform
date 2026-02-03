@@ -14,7 +14,7 @@ steps:
       - '-t'
       - 'gcr.io/$PROJECT_ID/agentic-platform-api:latest'
       - '-f'
-      - 'Dockerfile.backend'
+      - 'Dockerfile'
       - '.'
     env:
       - 'CLOUDSDK_COMPUTE_ZONE=us-central1'
