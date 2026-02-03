@@ -40,6 +40,8 @@ RUN pip install --no-cache-dir \
 # Copy application code
 COPY src/ src/
 COPY sample_data/ sample_data/
+COPY demo_workflow.yaml demo_workflow.yaml
+COPY demo_input.json demo_input.json
 
 # Copy built UI from first stage
 COPY --from=ui-builder /ui/dist ui/dist
