@@ -27,32 +27,6 @@ steps:
       - 'gcr.io/$PROJECT_ID/agentic-platform-api'
     waitFor: ['build']
 
-  # Deploy to Cloud Run
-  - name: 'gcr.io/cloud-builders/gcloud'
-    id: 'deploy'
-    args:
-      - 'run'
-      - 'deploy'
-      - 'agentic-platform-api'
-      - '--image'
-      - 'gcr.io/$PROJECT_ID/agentic-platform-api:latest'
-      - '--region'
-      - 'us-central1'
-      - '--port'
-      - '8080'
-      - '--memory'
-      - '512Mi'
-      - '--cpu'
-      - '2'
-      - '--timeout'
-      - '3600'
-      - '--max-instances'
-      - '10'
-      - '--allow-unauthenticated'
-      - '--set-env-vars'
-      - 'PYTHONUNBUFFERED=1'
-    waitFor: ['push']
-
 images:
   - 'gcr.io/$PROJECT_ID/agentic-platform-api:$SHORT_SHA'
   - 'gcr.io/$PROJECT_ID/agentic-platform-api:latest'
