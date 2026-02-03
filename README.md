@@ -4,6 +4,16 @@ A production-ready, test-driven foundation for building multi-agent AI workflows
 
 **🌐 Live Demo:** https://agentic-platform-api-7erqohmwxa-uc.a.run.app/ | **📊 Tech Stack:** 28% of aspirational AI platform coverage | **🚀 Phase 9:** LangGraph Development (Week 1/4)
 
+## ✨ Key Features
+
+- **🏗️ Enterprise Architecture**: Modular design with adapter pattern, plugin system, and clean separation of concerns
+- **🔌 MCP Server Integration**: Full Model Context Protocol support for extensible tool orchestration
+- **🧪 Test-Driven Development**: 57+ passing tests with comprehensive coverage
+- **📊 Audit & Compliance**: Immutable audit logs for every action, event tracking, and compliance reporting
+- **☁️ Cloud-Ready**: Deployed to Google Cloud Run with auto-scaling, monitoring, and high availability
+- **🎨 Modern UI**: React + Material-UI dashboard with real-time workflow execution and OCR demo
+- **📚 Well-Documented**: Architecture Decision Records (ADRs), API docs, deployment guides
+
 ## ✨ Current Capabilities
 
 ### ✅ Production-Ready (Phase 8)
@@ -32,7 +42,7 @@ A production-ready, test-driven foundation for building multi-agent AI workflows
 - Advanced monitoring (LangSmith, W&B, Prometheus)
 - Infrastructure as Code (Terraform, Helm)
 
-## 📚 Documentation
+##  Documentation
 
 | Document | Purpose |
 |----------|---------|
@@ -55,30 +65,48 @@ Visit **https://agentic-platform-api-7erqohmwxa-uc.a.run.app/**
 - ✅ **Workflow Executor** - Upload YAML workflow + JSON input, run with MCP or LangGraph adapter (see results below)
 - ✅ **Full Audit Trail** - See all operations logged with timestamps and correlation IDs
 
-### Option 2: Local Development (5 minutes)
-
-**Requirements:** Python 3.12+, Node.js 18+, git
+### Option 2: Local Development
 
 ```bash
+# Clone & setup
 git clone <repo-url>
 cd agentic-platform
 
-# One-command startup (backend + frontend)
-chmod +x start_all.sh
-./start_all.sh
+# Backend setup
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Frontend setup
+cd ui && npm install && cd ..
+
+# Start services
+source .venv/bin/activate && python3 -m uvicorn src.agentic_platform.api:app --port 8003 &
+cd ui && npx vite &
 
 # Access:
-# - Frontend: http://localhost:5173 (React UI)
-# - Backend: http://localhost:8000 (FastAPI)
-# - API Docs: http://localhost:8000/docs (Swagger)
-# - MCP Tools: http://localhost:8000/mcp/tools (discovery)
+# - UI: http://localhost:5173
+# - API: http://localhost:8003
+# - API Docs: http://localhost:8003/docs
 ```
 
-### Option 3: Docker
+### Option 3: Docker Deployment
 
 ```bash
-# Build image
+# Build and run with Docker
 docker build -t agentic-platform .
+docker run -p 8080:8080 agentic-platform
+# Visit http://localhost:8080
+```
+
+### Google Cloud Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for comprehensive Cloud Run deployment guide with:
+- Step-by-step GCP setup
+- Docker image building and pushing
+- Cloud Run configuration
+- Monitoring and auto-scaling
+- Security best practices
 
 # Run container
 docker run -p 8080:8080 \
