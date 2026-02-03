@@ -279,11 +279,19 @@ async def run_workflow(
         workflow_content = await workflow.read()
         if not workflow_content:
             raise ValueError("Workflow file is empty")
-        wf_def = yaml.safe_load(workflow_content)
+        # Decode bytes to string if needed
+        if isinstance(workflow_content, bytes):
+            workflow_text = workflow_content.decode('utf-8')
+        else:
+            workflow_text = workflow_content
+        logger.debug(f"Workflow content (first 200 chars): {workflow_text[:200]}")
+        wf_def = yaml.safe_load(workflow_text)
         if not wf_def:
-            raise ValueError("Workflow YAML is empty")
+            raise ValueError("Workflow YAML is empty or parses to None")
+        if not isinstance(wf_def, dict):
+            raise ValueError(f"Workflow must be a YAML object/dict, got {type(wf_def).__name__}")
         if "nodes" not in wf_def or "edges" not in wf_def:
-            raise ValueError("Workflow must contain 'nodes' and 'edges' keys")
+            raise ValueError(f"Workflow must contain 'nodes' and 'edges' keys. Found keys: {list(wf_def.keys())}")
     except Exception as e:
         logger.error(f"Malformed workflow YAML: {str(e)}")
         raise HTTPException(
