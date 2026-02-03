@@ -1,5 +1,35 @@
 import React, { useState } from 'react';
-import { Container, Typography, Button, Card, CardContent, Box, Alert, CircularProgress, FormControl, InputLabel, Select, MenuItem, TextField } from '@mui/material';
+import { Container, Typography, Button, Card, CardContent, Box, Alert, CircularProgress, FormControl, InputLabel, Select, MenuItem, TextField, Grid } from '@mui/material';
+
+// Modern art background styles
+const modernArtStyle = {
+  background: `
+    linear-gradient(135deg, #667eea 0%, #764ba2 25%),
+    linear-gradient(225deg, #f093fb 0%, #f5576c 25%),
+    linear-gradient(315deg, #4facfe 0%, #00f2fe 25%),
+    linear-gradient(45deg, #43e97b 0%, #38f9d7 25%)
+  `,
+  backgroundSize: '400% 400%',
+  animation: 'gradientShift 15s ease infinite',
+  position: 'relative',
+};
+
+// Add global styles for background
+const styleSheet = document.createElement('style');
+styleSheet.textContent = `
+  @keyframes floatIn {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+`;
+document.head.appendChild(styleSheet);
+
+// API Base URL - Use environment variable or default to localhost for dev
+const API_BASE_URL = (typeof process !== 'undefined' && process.env?.REACT_APP_API_URL) || (
+  typeof window !== 'undefined' && window.location.hostname === 'localhost'
+    ? 'http://localhost:8003'
+    : 'https://agentic-platform-api-170705020917.us-central1.run.app'
+);
 
 // Default MCP tools list (fallback when API is unavailable)
 const defaultMcpTools = [
