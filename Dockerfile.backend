@@ -23,7 +23,6 @@ RUN pip install --no-cache-dir \
 
 # Copy application code
 COPY src/ src/
-COPY sample_data/ sample_data/
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
