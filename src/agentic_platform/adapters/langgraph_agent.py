@@ -14,9 +14,12 @@ Usage:
 """
 
 import logging
+import re
+import json
 from typing import Dict, Any, List, Optional, Callable
 from dataclasses import dataclass
-from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, ToolMessage
+from langgraph.graph import StateGraph, END
 
 from agentic_platform.adapters.langgraph_state import AgentState, create_initial_state
 from agentic_platform.adapters.langgraph_memory import MemoryManager, InMemoryMemory
@@ -101,6 +104,218 @@ class LangGraphAgent:
         """Record a reasoning step."""
         step_num = len(self.reasoning_steps)
         self.reasoning_steps.append(f"Step {step_num}: {step}")
+    
+    def agent_node(self, state: AgentState) -> Dict[str, Any]:
+        """
+        LLM reasoning node.
+        
+        Calls LLM with current messages and returns updated state.
+        This is the main reasoning step where the agent decides what to do.
+        
+        Args:
+            state: Current agent state
+        
+        Returns:
+            State update with new messages and incremented iteration count
+        """
+        messages = state["messages"]
+        iteration = state["iteration_count"] + 1
+        
+        logger.debug(f"Agent node: iteration {iteration}")
+        
+        try:
+            # Get LLM response
+            response = self.llm.invoke(messages)
+            
+            if response is None:
+                logger.warning("LLM returned None")
+                return {
+                    "messages": messages,
+                    "iteration_count": iteration,
+                    "error": "LLM returned no response"
+                }
+            
+            # Extract response content
+            response_text = response.content if hasattr(response, 'content') else str(response)
+            
+            logger.debug(f"LLM response: {response_text[:100]}")
+            
+            # Add response as AIMessage
+            new_messages = messages + [AIMessage(content=response_text)]
+            
+            # Track reasoning step
+            self.add_reasoning_step(f"LLM: {response_text[:100]}")
+            
+            # Add to memory
+            self.memory.add_assistant(response_text)
+            
+            return {
+                "messages": new_messages,
+                "iteration_count": iteration,
+            }
+        
+        except Exception as e:
+            logger.error(f"Agent node error: {e}")
+            return {
+                "messages": messages,
+                "iteration_count": iteration,
+                "error": str(e),
+                "error_count": state.get("error_count", 0) + 1
+            }
+    
+    def tool_node(self, state: AgentState) -> Dict[str, Any]:
+        """
+        Tool execution node.
+        
+        Executes the current_tool with tool_input and returns result.
+        
+        Args:
+            state: Current agent state (must have current_tool and tool_input)
+        
+        Returns:
+            State update with tool result added to messages and tool_results
+        """
+        tool_name = state.get("current_tool")
+        tool_input = state.get("tool_input", {})
+        messages = state["messages"]
+        tool_results = state.get("tool_results", [])
+        
+        logger.debug(f"Tool node: executing {tool_name} with {tool_input}")
+        
+        if not tool_name:
+            logger.warning("Tool node called but no current_tool specified")
+            return {
+                "messages": messages,
+                "tool_results": tool_results,
+                "error": "No tool specified"
+            }
+        
+        try:
+            # Find and execute tool
+            result = self._execute_tool(tool_name, tool_input)
+            
+            logger.debug(f"Tool result: {str(result)[:100]}")
+            
+            # Add tool result to messages
+            tool_msg = ToolMessage(content=str(result), tool_call_id=tool_name)
+            new_messages = messages + [tool_msg]
+            
+            # Track tool call
+            self.tool_calls.append({
+                "tool": tool_name,
+                "args": tool_input,
+                "result": result
+            })
+            self.add_reasoning_step(f"Tool result: {str(result)[:100]}")
+            self.memory.add_tool_result(tool_name, result)
+            
+            # Accumulate tool results
+            new_tool_results = tool_results + [{
+                "tool": tool_name,
+                "args": tool_input,
+                "result": result
+            }]
+            
+            return {
+                "messages": new_messages,
+                "tool_results": new_tool_results,
+                "current_tool": None,
+                "tool_input": None,
+            }
+        
+        except Exception as e:
+            logger.error(f"Tool execution error: {e}")
+            return {
+                "messages": messages,
+                "tool_results": tool_results,
+                "error": str(e),
+                "error_count": state.get("error_count", 0) + 1,
+                "current_tool": None,
+            }
+    
+    def router(self, state: AgentState) -> str:
+        """
+        Conditional router for state machine.
+        
+        Decides whether to:
+        - Continue to tool_node (if tool use detected)
+        - End (if final answer or max iterations reached)
+        
+        Args:
+            state: Current agent state
+        
+        Returns:
+            Route: "tool_node" or "__end__"
+        """
+        messages = state["messages"]
+        iteration = state["iteration_count"]
+        max_iter = state["max_iterations"]
+        
+        # Check if max iterations reached
+        if iteration >= max_iter:
+            logger.info(f"Max iterations ({max_iter}) reached")
+            return END
+        
+        # Get last message
+        if not messages:
+            return END
+        
+        last_msg = messages[-1]
+        
+        # If last message is not from AI, can't route based on it
+        if not isinstance(last_msg, AIMessage):
+            return END
+        
+        response_text = last_msg.content
+        
+        # Check if tool use is requested
+        tool_name, tool_args = self._extract_tool_use(response_text)
+        
+        if tool_name and tool_name in [t.name if hasattr(t, 'name') else str(t) for t in self.tools]:
+            # Update state with tool info
+            state["current_tool"] = tool_name
+            state["tool_input"] = tool_args
+            return "tool_node"
+        
+        # No tool use - end
+        return END
+    
+    def create_graph(self) -> StateGraph:
+        """
+        Create and compile the LangGraph state machine.
+        
+        Graph structure:
+        START -> agent_node -> router -> {tool_node -> agent_node} or END
+        
+        Returns:
+            Compiled StateGraph ready for execution
+        """
+        graph = StateGraph(AgentState)
+        
+        # Add nodes
+        graph.add_node("agent", self.agent_node)
+        graph.add_node("tool", self.tool_node)
+        
+        # Add edges
+        graph.set_entry_point("agent")
+        
+        # agent -> router decides next step
+        graph.add_conditional_edges(
+            "agent",
+            self.router,
+            {
+                "tool_node": "tool",
+                END: END
+            }
+        )
+        
+        # After tool execution, go back to agent
+        graph.add_edge("tool", "agent")
+        
+        logger.info("StateGraph created and compiled")
+        
+        return graph.compile()
+
     
     def execute(self, prompt: str, context: Optional[Dict[str, Any]] = None) -> AgentExecutionResult:
         """
@@ -216,10 +431,10 @@ class LangGraphAgent:
         Looks for patterns like:
         - "use_tool: extract_text_from_image with image_path=document.jpg"
         - "{\"tool\": \"extract_text_from_image\", \"args\": {...}}"
-        """
-        import re
-        import json
         
+        Returns:
+            Tuple of (tool_name, tool_args) or (None, None) if no tool detected
+        """
         # Pattern 1: use_tool: name with args
         match = re.search(r"use_tool:\s*(\w+)\s*(?:with\s+(.+))?", response_text, re.IGNORECASE)
         if match:
