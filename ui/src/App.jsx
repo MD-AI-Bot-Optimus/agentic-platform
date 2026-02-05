@@ -108,6 +108,15 @@ function App() {
   const [mcpLoading, setMcpLoading] = useState(false);
   const [mcpError, setMcpError] = useState(null);
 
+  // LangGraph Agent state
+  const [agentPrompt, setAgentPrompt] = useState('What is artificial intelligence?');
+  const [agentModel, setAgentModel] = useState('mock-llm');
+  const [agentMaxIterations, setAgentMaxIterations] = useState(10);
+  const [agentResult, setAgentResult] = useState(null);
+  const [agentLoading, setAgentLoading] = useState(false);
+  const [agentError, setAgentError] = useState(null);
+  const [expandedStep, setExpandedStep] = useState(null);
+
   // Sample data files for quick selection
   const sampleDataFiles = [
     { path: 'sample_data/letter.jpg', name: 'Letter (handwritten)' },
@@ -265,6 +274,69 @@ function App() {
     }
   };
 
+  // Agent Handler
+  const handleAgentSubmit = async (e) => {
+    e.preventDefault();
+    setAgentLoading(true);
+    setAgentError(null);
+    setAgentResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('prompt', agentPrompt);
+      formData.append('model', agentModel);
+
+      const response = await fetch(`${API_BASE_URL}/agent/execute`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('API error: ' + response.status);
+      const data = await response.json();
+      
+      // Build execution trace from response
+      const executionTrace = [];
+      let stepNum = 1;
+      
+      // Add reasoning steps
+      for (let i = 0; i < data.reasoning_steps.length; i++) {
+        executionTrace.push({
+          step_number: stepNum,
+          node_type: 'agent',
+          message: `Iteration ${i + 1}: Agent Reasoning`,
+          reasoning: data.reasoning_steps[i],
+          tool_name: '',
+          tool_input: {},
+          tool_result: ''
+        });
+        stepNum++;
+      }
+      
+      // Add tool calls
+      for (const tool_call of data.tool_calls) {
+        executionTrace.push({
+          step_number: stepNum,
+          node_type: 'tool',
+          message: `Executing tool: ${tool_call.tool || tool_call.name || 'unknown'}`,
+          tool_name: tool_call.tool || tool_call.name || '',
+          tool_input: tool_call.input || tool_call.arguments || {},
+          tool_result: tool_call.result || '',
+          reasoning: ''
+        });
+        stepNum++;
+      }
+      
+      setAgentResult({
+        ...data,
+        execution_trace: executionTrace
+      });
+    } catch (err) {
+      setAgentError(err.message);
+    } finally {
+      setAgentLoading(false);
+    }
+  };
+
   return (
     <div style={{
       background: 'transparent',
@@ -341,6 +413,23 @@ function App() {
               }}
             >
               ⚙️ Workflow
+            </Button>
+            <Button
+              onClick={() => setActiveView('agent')}
+              variant={activeView === 'agent' ? 'contained' : 'outlined'}
+              size="large"
+              sx={{
+                minWidth: '150px',
+                backgroundColor: activeView === 'agent' ? '#ff6b6b' : 'transparent',
+                borderColor: '#ff6b6b',
+                color: activeView === 'agent' ? '#fff' : '#ff6b6b',
+                '&:hover': {
+                  backgroundColor: activeView === 'agent' ? '#ff5252' : 'rgba(255, 107, 107, 0.1)',
+                  borderColor: '#ff6b6b',
+                }
+              }}
+            >
+              🤖 Agent
             </Button>
           </Box>
 
@@ -648,6 +737,173 @@ function App() {
                         {result.audit_log ? JSON.stringify(result.audit_log, null, 2) : 'No audit log'}
                       </Box>
                     </Box>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* LangGraph Agent Demo Section */}
+          {activeView === 'agent' && (
+            <Card sx={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)', borderRadius: 2, borderTop: '4px solid #ff6b6b' }}>
+              <CardContent>
+                <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#ff6b6b' }}>🤖 LangGraph Agent Reasoning</Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>Watch the agent reason, route decisions, and execute tools in real-time</Typography>
+
+                <Box component="form" onSubmit={handleAgentSubmit} sx={{ display: 'grid', gap: 2 }}>
+                  <TextField
+                    label="Prompt"
+                    multiline
+                    rows={4}
+                    value={agentPrompt}
+                    onChange={(e) => setAgentPrompt(e.target.value)}
+                    disabled={agentLoading}
+                    fullWidth
+                  />
+
+                  <FormControl fullWidth>
+                    <InputLabel>Model</InputLabel>
+                    <Select
+                      value={agentModel}
+                      onChange={(e) => setAgentModel(e.target.value)}
+                      label="Model"
+                      disabled={agentLoading}
+                    >
+                      <MenuItem value="mock-llm">Mock LLM (Free)</MenuItem>
+                      <MenuItem value="claude-3.5-sonnet">Claude 3.5 Sonnet</MenuItem>
+                      <MenuItem value="gpt-4">GPT-4</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  <Button 
+                    type="submit" 
+                    variant="contained" 
+                    color="primary" 
+                    disabled={agentLoading}
+                    sx={{ fontWeight: 600, fontSize: '1rem', py: 1.2, backgroundColor: '#ff6b6b', '&:hover': { backgroundColor: '#ff5252' } }}
+                  >
+                    {agentLoading ? <CircularProgress size={24} color="inherit" /> : 'Execute Agent'}
+                  </Button>
+                </Box>
+
+                {agentError && <Alert severity="error" sx={{ mt: 2 }}>{agentError}</Alert>}
+
+                {agentResult && (
+                  <Box sx={{ mt: 3 }}>
+                    {/* Status Bar */}
+                    <Box sx={{ 
+                      background: agentResult.status === 'success' ? '#e8f5e9' : '#fff3e0',
+                      borderLeft: `4px solid ${agentResult.status === 'success' ? '#4caf50' : '#ff9800'}`,
+                      p: 2,
+                      borderRadius: 1,
+                      mb: 2
+                    }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                        Status: <span style={{ textTransform: 'uppercase', fontWeight: 700 }}>{agentResult.status}</span>
+                      </Typography>
+                      <Typography variant="body2">
+                        Iterations: {agentResult.iterations} | Tool Calls: {agentResult.tool_calls?.length || 0}
+                      </Typography>
+                    </Box>
+
+                    {/* Execution Steps Timeline */}
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>⏱️ Execution Timeline</Typography>
+                    <Box sx={{ 
+                      border: '1px solid #e0e0e0',
+                      borderRadius: 1,
+                      overflow: 'hidden',
+                      mb: 3
+                    }}>
+                      {agentResult.execution_trace && agentResult.execution_trace.length > 0 ? (
+                        agentResult.execution_trace.map((step, idx) => (
+                          <Box key={idx}>
+                            <Box
+                              onClick={() => setExpandedStep(expandedStep === idx ? null : idx)}
+                              sx={{
+                                background: step.node_type === 'agent' ? '#f5f5f5' : step.node_type === 'tool' ? '#fff9e6' : '#e8f5e9',
+                                p: 2,
+                                borderBottom: '1px solid #e0e0e0',
+                                cursor: 'pointer',
+                                '&:hover': { background: step.node_type === 'agent' ? '#eeeeee' : step.node_type === 'tool' ? '#fff8d6' : '#e0f2f1' },
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between'
+                              }}
+                            >
+                              <Box sx={{ flex: 1 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                  Step {step.step_number}: {
+                                    step.node_type === 'agent' ? '🧠 Agent Reasoning' :
+                                    step.node_type === 'tool' ? '🔧 Tool Execution' :
+                                    '🚦 Router Decision'
+                                  }
+                                </Typography>
+                                <Typography variant="body2" color="textSecondary">{step.message}</Typography>
+                              </Box>
+                              <Typography sx={{ color: '#999', ml: 2, fontWeight: 700 }}>
+                                {expandedStep === idx ? '▼' : '▶'}
+                              </Typography>
+                            </Box>
+
+                            {/* Expanded Details */}
+                            {expandedStep === idx && (
+                              <Box sx={{ background: '#f9f9f9', p: 2, borderBottom: '1px solid #e0e0e0' }}>
+                                {step.reasoning && (
+                                  <Box sx={{ mb: 2 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Reasoning:</Typography>
+                                    <Box sx={{ background: '#fff', p: 1.5, borderRadius: 1, fontSize: '0.85rem', whiteSpace: 'pre-wrap', fontFamily: 'monospace', overflowX: 'auto' }}>
+                                      {step.reasoning}
+                                    </Box>
+                                  </Box>
+                                )}
+                                {step.tool_name && (
+                                  <Box sx={{ mb: 2 }}>
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>Tool: {step.tool_name}</Typography>
+                                    <Box sx={{ background: '#fff', p: 1.5, borderRadius: 1 }}>
+                                      <Typography variant="body2" sx={{ fontWeight: 600 }}>Input:</Typography>
+                                      <pre style={{ fontSize: '0.75rem', overflow: 'auto', margin: '8px 0' }}>
+                                        {JSON.stringify(step.tool_input, null, 2)}
+                                      </pre>
+                                      {step.tool_result && (
+                                        <>
+                                          <Typography variant="body2" sx={{ fontWeight: 600, mt: 1 }}>Result:</Typography>
+                                          <pre style={{ fontSize: '0.75rem', overflow: 'auto', maxHeight: '150px', margin: '8px 0' }}>
+                                            {typeof step.tool_result === 'string' ? step.tool_result : JSON.stringify(step.tool_result, null, 2)}
+                                          </pre>
+                                        </>
+                                      )}
+                                    </Box>
+                                  </Box>
+                                )}
+                              </Box>
+                            )}
+                          </Box>
+                        ))
+                      ) : (
+                        <Box sx={{ p: 2, color: '#999' }}>No execution steps to display</Box>
+                      )}
+                    </Box>
+
+                    {/* Final Output */}
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>✅ Final Output</Typography>
+                    <Box sx={{ background: '#f6f8fa', borderRadius: 1, p: 2, fontSize: '0.95rem', whiteSpace: 'pre-wrap', mb: 3 }}>
+                      {agentResult.final_output || '[No output]'}
+                    </Box>
+
+                    {/* Reasoning Steps */}
+                    {agentResult.reasoning_steps && agentResult.reasoning_steps.length > 0 && (
+                      <>
+                        <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>📝 All Reasoning Steps</Typography>
+                        <Box sx={{ background: '#f6f8fa', borderRadius: 1, p: 2 }}>
+                          {agentResult.reasoning_steps.map((step, idx) => (
+                            <Box key={idx} sx={{ mb: 1.5, pb: 1.5, borderBottom: idx < agentResult.reasoning_steps.length - 1 ? '1px solid #ddd' : 'none' }}>
+                              <Typography variant="caption" sx={{ fontWeight: 600, color: '#ff6b6b' }}>Step {idx + 1}:</Typography>
+                              <Typography variant="body2" sx={{ mt: 0.5 }}>{step}</Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                      </>
+                    )}
                   </Box>
                 )}
               </CardContent>
