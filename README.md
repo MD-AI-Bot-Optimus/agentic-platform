@@ -1,35 +1,40 @@
 # 🤖 Agentic Platform
 
-A production-ready, test-driven foundation for building multi-agent AI workflows with **OCR**, **MCP protocol**, **tool orchestration**, and **audit trails**. 
+A test-driven, extensible foundation for building AI workflows with **OCR**, **MCP protocol**, **tool orchestration**, and **audit trails**. Currently Phase 8 complete with ongoing Phase 9 (LangGraph agent orchestration).
 
-**🌐 Live Demo:** https://agentic-platform-api-7erqohmwxa-uc.a.run.app/ | **✅ Status:** Phase 8 Complete | **🚀 Phase 9:** LangGraph (In Progress)
+**🌐 Live Demo:** https://agentic-platform-api-7erqohmwxa-uc.a.run.app/ | **✅ Status:** Phase 8 Complete | **🔄 Phase 9:** LangGraph (In Progress)
 
-## ✨ Key Features
+## ✨ Currently Implemented (Phase 8 ✅)
 
-- **🏗️ Enterprise Architecture** - Modular design with adapter pattern and clean separation of concerns
-- **🔌 MCP Server Integration** - Full Model Context Protocol support for tool orchestration
-- **🧪 Test-Driven Development** - 57+ passing tests with comprehensive coverage
-- **📊 Audit & Compliance** - Immutable audit logs for every action
-- **☁️ Cloud-Ready** - Deployed to Google Cloud Run with auto-scaling
-- **🎨 Modern UI** - React + Material-UI dashboard with OCR & workflow executor
-- **🚀 Production Ready** - Fully operational OCR, workflow engine, and MCP server
+- **🏗️ Enterprise Architecture** - Adapter pattern, clean separation, plugin system for extensibility
+- **🔌 MCP Server** - Full JSON-RPC 2.0 protocol for standardized tool access
+- **📄 OCR Engine** - Google Vision API with confidence scoring
+- **⚙️ Workflow Engine** - YAML DAGs with branching, retry, conditional logic
+- **📊 Audit Trail** - Immutable event logging with correlation IDs
+- **🎨 Modern UI** - React + Material-UI (OCR demo, MCP tester, workflow runner)
+- **🧪 Testing** - 57+ passing tests (unit, integration, E2E)
+- **☁️ Cloud Deployment** - Google Cloud Run with auto-scaling and GitHub CI/CD
 
-## ✨ Production-Ready Features (Phase 8 ✅)
+## ⚠️ Known Limitations
 
-- **OCR Engine** - Google Vision API with intelligent confidence scoring
-- **MCP Server** - Full JSON-RPC 2.0 compliance with tool registry
-- **Workflow Engine** - YAML-based workflows with branching and retry policies
-- **Audit Trail** - Immutable event logging with correlation IDs
-- **Cloud Deployment** - Google Cloud Run with auto-scaling
-- **Modern UI** - React 18 + Material-UI dashboard
-- **57+ Tests** - Comprehensive unit & integration test coverage
+- **State Persistence** - In-memory only (PostgreSQL integration in Phase 10)
+- **Authentication/Authorization** - Not yet implemented (Phase 10)
+- **LangGraph Agent** - Stub only, returns simulated responses (Phase 9 in progress)
+- **No LLM Integration** - LLM factory built, real agent implementation pending
+- **No RAG System** - Planned for Phase 12
+- **No Real-Time Streaming** - Planned for Phase 12
 
-## 🔄 In Development (Phase 9)
+## 🚀 Roadmap
 
-- **LLM Integration** - Claude, GPT-4, Gemini via LangGraph
-- **Agent Memory** - Multi-step conversation context
-- **RAG System** - Knowledge grounding and retrieval
-- **Streaming UI** - Real-time token streaming and visualization
+| Phase | Focus | Status | Target |
+|-------|-------|--------|--------|
+| **Phase 8** | OCR, MCP, Workflows | ✅ Complete | Feb 2026 |
+| **Phase 9** | LangGraph Agent | 🔄 In Progress | Feb 28 |
+| **Phase 10** | PostgreSQL, Auth, Security | 📋 Planned | Apr 1 |
+| **Phase 11** | Observability, Monitoring | 📋 Planned | May 1 |
+| **Phase 12** | RAG, Streaming, Global Scale | 📋 Planned | Jun 1 |
+
+See [docs/roadmap.md](docs/roadmap.md) for detailed implementation plan.
 
 ## 📚 Documentation
 
@@ -197,19 +202,36 @@ pytest tests/unit/tools/            # Specific module
 - 8+ Audit tests ✅
 - **Total: 57+ tests (100% passing)**
 
-## 🔧 Tech Stack
+## 🔧 Technologies
 
-| Layer | Technology | Status |
-|-------|-----------|--------|
-| **Frontend** | React 18, Material-UI 5, Vite | ✅ Production |
-| **Backend** | Python 3.12, FastAPI, Pydantic v2 | ✅ Production |
-| **OCR** | Google Cloud Vision API | ✅ Production |
-| **Workflow** | YAML parser, DAG executor | ✅ Production |
-| **MCP** | JSON-RPC 2.0, tool registry | ✅ Production |
-| **Audit** | Immutable event log | ✅ Production |
-| **Cloud** | Google Cloud Run, Cloud Build | ✅ Production |
-| **CI/CD** | GitHub webhooks, Cloud Build | ✅ Production |
-| **Testing** | pytest, coverage | ✅ Production |
+**Backend:**
+- Python 3.12
+- FastAPI (REST API)
+- Pydantic v2 (data validation)
+- Uvicorn (ASGI server)
+- google-cloud-vision (OCR)
+- PyYAML (workflow parsing)
+- python-multipart (file uploads)
+- LangChain (Phase 9: LLM integration)
+
+**Frontend:**
+- React 18
+- Material-UI 5
+- Vite (build tool)
+
+**Cloud Infrastructure:**
+- Google Cloud Run (serverless hosting)
+- Google Cloud Build (CI/CD)
+- Google Cloud Vision API (OCR)
+
+**Standards & Protocols:**
+- JSON-RPC 2.0 (MCP transport)
+- OpenAPI 3.0 (API documentation)
+- MCP 1.0 (Model Context Protocol)
+
+**Testing & Quality:**
+- pytest (test framework)
+- pytest-cov (coverage reports)
 
 ## 🚢 Deployment
 

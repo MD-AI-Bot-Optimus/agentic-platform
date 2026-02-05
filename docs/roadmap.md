@@ -223,11 +223,157 @@ This document details the test-driven development (TDD) roadmap and complete dev
 
 ---
 
-## Phase 10 — Technology Stack Expansion (Aspirational Roadmap)
+## Phase 10 — Enterprise Foundation (Persistence & Security)
+
+**Goal:** Add persistent state, authentication, authorization, and production security  
+**Status:** 📋 Planned | **Target Duration:** 4-6 weeks | **Target Start:** Mar 1, 2026
+
+### Enterprise Readiness Assessment
+**Current Score: 60% (6.5/10)**
+- ✅ Architecture (9/10) - Excellent adapter pattern foundation
+- ✅ Extensibility (9/10) - Plugin system, clean separation
+- ✅ Core Features (8/10) - OCR, MCP, Workflows working
+- ❌ Data Persistence (2/10) - In-memory only
+- 🔄 LLM/Agents (5/10) - Phase 9 in progress
+- ✅ DevOps/Deployment (7/10) - Cloud Run operational
+- ❌ Security (4/10) - No auth/authz
+- ✅ Documentation (8/10) - Comprehensive
+
+### Week 1-2: Persistent State Layer
+- [ ] Add PostgreSQL integration (schema + migrations)
+- [ ] Implement ArtifactStore with S3 + DB fallback
+- [ ] Add workflow run history persistence
+- [ ] Implement agent conversation history storage
+- [ ] Create database initialization scripts
+- **Impact:** Enables multi-session workflows and audit compliance
+
+### Week 2-3: Authentication & Authorization
+- [ ] Add JWT token support (issuer, validation, refresh)
+- [ ] Implement RBAC (role-based access control)
+- [ ] Add API key management (CRUD, rate limiting)
+- [ ] Create user/organization management endpoints
+- [ ] Add OAuth2 integration hooks (Auth0, Google)
+- **Impact:** Enables multi-tenant deployments and compliance
+
+### Week 3-4: Secrets & Configuration Management
+- [ ] Integrate Google Cloud Secret Manager
+- [ ] Add environment-specific config (dev/staging/prod)
+- [ ] Implement secret rotation policies
+- [ ] Create configuration schema validation
+- [ ] Add .env.secure pattern with vault support
+- **Impact:** Production-grade secrets handling
+
+### Week 4-5: Advanced Security
+- [ ] Add request signing and verification
+- [ ] Implement rate limiting per user/API key
+- [ ] Add CORS and CSRF protection
+- [ ] Create PII redaction policies (audit-safe)
+- [ ] Add input validation middleware
+- **Impact:** Hardens API against attacks
+
+### Week 5-6: Infrastructure as Code
+- [ ] Create Terraform modules (compute, database, secrets)
+- [ ] Add Helm charts for Kubernetes deployment
+- [ ] Implement CloudSQL backup policies
+- [ ] Add multi-region/HA deployment configs
+- [ ] Create deployment CI/CD pipeline
+- **Impact:** Reproducible, scalable deployments
+
+**Success Criteria:**
+- 100% of existing tests pass with PostgreSQL backend
+- API operations require valid JWT or API key
+- Zero plaintext secrets in repos/logs
+- Deployments reproducible with IaC
+- Documentation covers self-hosted setup
+
+---
+
+## Phase 11 — Observability & Enterprise Operations
+
+**Goal:** Production-grade monitoring, logging, tracing, and operational excellence  
+**Status:** 📋 Planned | **Target Duration:** 4 weeks | **Target Start:** Apr 1, 2026
+
+### Week 1-2: Centralized Logging & Metrics
+- [ ] Integrate Cloud Logging (structured JSON logs)
+- [ ] Add Prometheus metrics (latency, errors, throughput)
+- [ ] Implement distributed tracing (OpenTelemetry)
+- [ ] Create monitoring dashboard (Cloud Monitoring/Grafana)
+- [ ] Add cost tracking per operation
+- **Impact:** Full operational visibility
+
+### Week 2-3: LLM Observability
+- [ ] Integrate LangSmith for LLM tracing
+- [ ] Add token counting and cost per request
+- [ ] Implement prompt versioning audit
+- [ ] Create LLM performance dashboard
+- [ ] Add model selection analytics
+- **Impact:** LLM-specific insights and optimization
+
+### Week 3-4: Alerting & Incident Response
+- [ ] Setup error budget policies
+- [ ] Create automated alert rules (latency, errors, cost)
+- [ ] Add incident tracking integration (PagerDuty)
+- [ ] Create runbooks for common issues
+- [ ] Implement SLO/SLA tracking
+- **Impact:** Proactive issue detection and response
+
+**Success Criteria:**
+- Logs centralized and searchable
+- Dashboards covering all metrics
+- Alerts trigger before SLO breach
+- 99.9% uptime tracking
+- Cost optimization insights
+
+---
+
+## Phase 12 — Advanced Features & Scaling
+
+**Goal:** RAG integration, advanced agent capabilities, global scaling  
+**Status:** 📋 Aspirational | **Target Start:** May 1, 2026
+
+### Week 1-2: RAG System
+- [ ] Add vector database (Pinecone/Weaviate)
+- [ ] Implement embedding pipeline (Sentence Transformers)
+- [ ] Add semantic chunking for documents
+- [ ] Create retrieval-augmented workflow node
+- [ ] Build knowledge base management UI
+- **Impact:** Grounds agents in proprietary knowledge
+
+### Week 2-3: Streaming & Real-Time UI
+- [ ] Implement Server-Sent Events (SSE) for token streaming
+- [ ] Add execution trace visualization
+- [ ] Create tool call inspector UI
+- [ ] Build prompt playground
+- [ ] Add real-time collaboration features
+- **Impact:** Transforms UX for interactive workflows
+
+### Week 3-4: Global Scaling & Performance
+- [ ] Implement request caching (Redis)
+- [ ] Add CDN integration for static assets
+- [ ] Create multi-region deployment strategy
+- [ ] Optimize database queries (indexing, connection pooling)
+- [ ] Add performance testing suite (k6/Artillery)
+- **Impact:** Sub-100ms latencies, global availability
+
+**End State (Phase 12 Complete):**
+- ✅ Full LangGraph agent orchestration
+- ✅ Enterprise-grade persistence and security
+- ✅ Production observability and monitoring
+- ✅ RAG-powered knowledge grounding
+- ✅ Real-time streaming UI
+- ✅ Global, scalable infrastructure
+- **Enterprise Readiness Score: 95%** (9.5/10)
+
+---
+
+## Technology Stack Expansion (Detailed Roadmap)
 
 ### Coverage Summary
-- **Current Implementation:** 20/70 tech stack categories (28%)
-- **Partial Implementation:** 3/70 (4%)
+- **Phase 8 Complete:** 20/70 tech stack categories (28%)
+- **Phase 9 (LangGraph):** +15 categories (42%)
+- **Phase 10 (Enterprise):** +18 categories (67%)
+- **Phase 11 (Observability):** +12 categories (85%)
+- **Phase 12 (Advanced):** +10 categories (95%+)
 - **Not Implemented:** 47/70 (67%)
 
 ### Week 1-2: LLM Foundation
