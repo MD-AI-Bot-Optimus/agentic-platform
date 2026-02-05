@@ -73,3 +73,74 @@ INFO:     127.0.0.1:65207 - "POST /run-ocr/ HTTP/1.1" 200 OK
 INFO:     127.0.0.1:65214 - "GET /demo_workflow.yaml HTTP/1.1" 200 OK
 INFO:     127.0.0.1:65217 - "GET /demo_input.json HTTP/1.1" 200 OK
 INFO:     127.0.0.1:65223 - "POST /run-workflow/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49191 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49193 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49196 - "GET /demo_workflow.yaml HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49199 - "GET /demo_input.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49202 - "POST /run-workflow/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49207 - "POST /mcp/request HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49211 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49240 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49242 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49269 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49270 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49278 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49280 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49285 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49287 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49291 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49293 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49805 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49807 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49809 - "POST /run-workflow/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50242 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50244 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50246 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:50248 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51840 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51842 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52026 - "GET /sample_data/handwriting.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52029 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52036 - "GET /demo_workflow.yaml HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52039 - "GET /demo_input.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52042 - "POST /run-workflow/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52101 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52103 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52105 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52107 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52455 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52457 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52459 - "GET /sample_data/stock_gs200.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52462 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53180 - "GET /sample_data/stock_gs200.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53183 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53187 - "GET /sample_data/ocr_sample_image.png HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53190 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53194 - "GET /sample_data/sample_image.png HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53198 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53202 - "GET /sample_data/ocr_sample_plaid.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53205 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53627 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53629 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53634 - "GET /sample_data/handwriting.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53637 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53641 - "GET /sample_data/ocr_sample_image.png HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53644 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53656 - "GET /sample_data/stock_gs200.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53659 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53663 - "POST /mcp/request HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53667 - "POST /mcp/request HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53671 - "POST /mcp/request HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53676 - "GET /demo_workflow.yaml HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53679 - "GET /demo_input.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53682 - "POST /run-workflow/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53716 - "GET /sample_data/handwriting.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53719 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53723 - "GET /sample_data/stock_gs200.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53726 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53730 - "GET /sample_data/numbers_gs150.jpg HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:53733 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53758 - "GET /sample_data/ocr_sample_text.png HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53761 - "POST /run-ocr/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55794 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55796 - "GET /mcp/tools HTTP/1.1" 200 OK

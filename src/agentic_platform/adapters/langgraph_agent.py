@@ -71,7 +71,11 @@ class LangGraphAgent:
         self.model_name = model
         self.max_iterations = max_iterations
         self.tools = tools or []
-        self.memory = memory or InMemoryMemory()
+        # Use provided memory or create new one
+        if memory is not None:
+            self.memory = memory
+        else:
+            self.memory = InMemoryMemory()
         self.llm = llm or get_llm_model(model=model)
         
         # State tracking
@@ -95,7 +99,8 @@ class LangGraphAgent:
     
     def add_reasoning_step(self, step: str) -> None:
         """Record a reasoning step."""
-        self.reasoning_steps.append(f"Step {self.iteration_count}: {step}")
+        step_num = len(self.reasoning_steps)
+        self.reasoning_steps.append(f"Step {step_num}: {step}")
     
     def execute(self, prompt: str, context: Optional[Dict[str, Any]] = None) -> AgentExecutionResult:
         """
