@@ -319,7 +319,7 @@ class LangGraphAgent:
     
     def execute(self, prompt: str, context: Optional[Dict[str, Any]] = None) -> AgentExecutionResult:
         """
-        Execute agent on prompt.
+        Execute agent on prompt using the compiled LangGraph.
         
         Args:
             prompt: User prompt
@@ -328,6 +328,7 @@ class LangGraphAgent:
         Returns:
             AgentExecutionResult with output and reasoning
         """
+        # Reset state
         self.iteration_count = 0
         self.reasoning_steps = []
         self.tool_calls = []
@@ -337,75 +338,50 @@ class LangGraphAgent:
         # Add to memory
         self.memory.add_human(prompt)
         
-        # Initialize state
-        messages = [HumanMessage(content=prompt)]
-        
         try:
-            # Main loop
-            for iteration in range(self.max_iterations):
-                self.iteration_count = iteration + 1
-                
-                logger.debug(f"Iteration {self.iteration_count}/{self.max_iterations}")
-                
-                # Get LLM response
-                response = self._get_llm_response(messages)
-                
-                if not response:
-                    logger.warning("No LLM response")
-                    break
-                
-                response_text = response.content if hasattr(response, 'content') else str(response)
-                self.add_reasoning_step(f"LLM: {response_text[:100]}")
-                
-                # Add to messages
-                messages.append(AIMessage(content=response_text))
-                self.memory.add_assistant(response_text)
-                
-                # Check if tool use is needed
-                tool_name, tool_args = self._extract_tool_use(response_text)
-                
-                if tool_name:
-                    # Execute tool
-                    logger.info(f"Executing tool: {tool_name}")
-                    self.add_reasoning_step(f"Tool: {tool_name}({tool_args})")
-                    
-                    result = self._execute_tool(tool_name, tool_args)
-                    self.tool_calls.append({
-                        "tool": tool_name,
-                        "args": tool_args,
-                        "result": result
-                    })
-                    self.memory.add_tool_result(tool_name, result)
-                    
-                    # Add tool result to conversation
-                    tool_msg = f"Tool {tool_name} result: {result}"
-                    messages.append(HumanMessage(content=tool_msg))
-                    self.add_reasoning_step(f"Tool result: {str(result)[:100]}")
-                
-                else:
-                    # No tool needed - agent has final answer
-                    logger.info(f"Agent reached conclusion after {self.iteration_count} iterations")
-                    return AgentExecutionResult(
-                        status="success",
-                        final_output=response_text,
-                        reasoning_steps=self.reasoning_steps,
-                        tool_calls=self.tool_calls,
-                        iterations=self.iteration_count
-                    )
+            # Create initial state
+            initial_state = create_initial_state(max_iterations=self.max_iterations)
+            initial_state["messages"] = [HumanMessage(content=prompt)]
+            initial_state["context"] = context or {}
             
-            # Max iterations reached
-            logger.warning(f"Max iterations ({self.max_iterations}) reached")
+            # Create and run graph
+            graph = self.create_graph()
+            final_state = graph.invoke(initial_state)
+            
+            # Extract results from final state
+            messages = final_state.get("messages", [])
+            final_output = None
+            
+            # Get last message as final output
+            if messages:
+                last_msg = messages[-1]
+                final_output = last_msg.content if hasattr(last_msg, 'content') else str(last_msg)
+            
+            # Determine status
+            status = "success"
+            error = final_state.get("error")
+            error_count = final_state.get("error_count", 0)
+            
+            if error:
+                status = "error"
+            elif final_state.get("iteration_count", 0) >= self.max_iterations:
+                status = "incomplete"
+            
+            iterations = final_state.get("iteration_count", 0)
+            
+            logger.info(f"Agent execution completed: {iterations} iterations, status={status}")
+            
             return AgentExecutionResult(
-                status="incomplete",
-                final_output=messages[-1].content if messages else None,
+                status=status,
+                final_output=final_output,
                 reasoning_steps=self.reasoning_steps,
                 tool_calls=self.tool_calls,
-                iterations=self.iteration_count,
-                error=f"Max iterations ({self.max_iterations}) reached"
+                iterations=iterations,
+                error=error
             )
         
         except Exception as e:
-            logger.error(f"Agent execution failed: {e}")
+            logger.error(f"Agent execution failed: {e}", exc_info=True)
             return AgentExecutionResult(
                 status="error",
                 final_output=None,
