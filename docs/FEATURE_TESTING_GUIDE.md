@@ -689,6 +689,459 @@ pytest tests/unit/phase_9/ --cov=src/agentic_platform/adapters/langgraph_agent
 
 ---
 
+## Debugging with Breakpoints: Interactive Testing Guide
+
+Want to see the routing and state changes in real-time? Use VS Code breakpoints to step through the code, inspect variables, and understand how features work.
+
+### Setup: VS Code Debugger Configuration
+
+1. **Create/Update `.vscode/launch.json`**:
+
+```json
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Debug Test",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "stopOnEntry": false
+    },
+    {
+      "name": "Python: Debug with Args",
+      "type": "python",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${file}", "-v", "-s"],
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+  ]
+}
+```
+
+2. **Launch debugger**: 
+   - Open test file
+   - Press `F5` or Debug > Start Debugging
+   - Debugger stops at breakpoints
+
+### Breakpoint Locations: See Routing in Action
+
+#### **Feature 1: Pure LangGraph - Watch Graph Compilation**
+
+**File**: [src/agentic_platform/adapters/langgraph_agent.py](../src/agentic_platform/adapters/langgraph_agent.py#L277-L311)
+
+**Breakpoints to Set**:
+
+```python
+def create_graph(self):
+    """Create and compile the StateGraph."""
+    # 🔴 BREAKPOINT #1: Before graph creation
+    graph_builder = StateGraph(AgentState)
+    
+    # Add nodes
+    graph_builder.add_node("agent_node", self.agent_node)
+    graph_builder.add_node("tool_node", self.tool_node)
+    
+    # Add edges
+    graph_builder.add_edge("__start__", "agent_node")  # 🔴 BREAKPOINT #2
+    graph_builder.add_conditional_edges(
+        "agent_node",
+        self.router,  # 🔴 BREAKPOINT #3: Watch router calls
+        {
+            "tool_node": "tool_node",
+            "__end__": "__end__"
+        }
+    )
+    graph_builder.add_edge("tool_node", "agent_node")  # 🔴 BREAKPOINT #4
+    
+    # 🔴 BREAKPOINT #5: At compilation
+    graph = graph_builder.compile()
+    
+    return graph
+```
+
+**What to Inspect**:
+- Hover over `graph_builder` → See node structure being built
+- Hover over `graph` after compile → Check compiled graph object
+- **Step through** `add_conditional_edges()` → Understand routing setup
+- **Inspect variables**: `graph.nodes`, `graph.edges`
+
+**Debug View Console** (bottom panel):
+```python
+# Type in Debug Console to inspect:
+>>> graph.nodes  # See all nodes
+>>> list(graph.edges)  # See all connections
+>>> graph.get_graph().draw_ascii()  # See graph structure
+```
+
+---
+
+#### **Feature 3: Intelligent Routing - Watch Router Decisions**
+
+**File**: [src/agentic_platform/adapters/langgraph_agent.py#L237-L275](../src/agentic_platform/adapters/langgraph_agent.py#L237-L275)
+
+**Key Breakpoints**:
+
+```python
+def router(self, state: AgentState) -> str:
+    """Route to tool_node or END based on last message."""
+    # 🔴 BREAKPOINT #1: Entry point
+    messages = state.get("messages", [])
+    
+    if not messages:
+        return "__end__"
+    
+    last_message = messages[-1]  # 🔴 BREAKPOINT #2: Inspect message
+    
+    # Check for tool use patterns
+    if isinstance(last_message, AIMessage):
+        content = last_message.content
+        
+        # 🔴 BREAKPOINT #3: Before pattern matching
+        tool_pattern = r"use_tool:\s*(\w+)"
+        match = re.search(tool_pattern, content)  # 🔴 BREAKPOINT #4: After regex
+        
+        if match:
+            tool_name = match.group(1)  # 🔴 BREAKPOINT #5
+            
+            # Check iteration limit
+            if state.get("iteration_count", 0) >= state.get("max_iterations", 10):
+                return "__end__"  # 🔴 BREAKPOINT #6
+            
+            return "tool_node"  # 🔴 BREAKPOINT #7: Tool path
+    
+    # 🔴 BREAKPOINT #8: Default END
+    return "__end__"
+```
+
+**Step-by-Step Debugging**:
+
+1. **Set breakpoint at entry** (line `def router`)
+2. **Run test**: 
+   ```bash
+   pytest tests/unit/phase_9/test_stategraph_implementation.py::TestRouterImplementation::test_router_detects_tool_use -v -s
+   ```
+3. **Inspect at each breakpoint**:
+   - Breakpoint #2: Hover over `last_message` → See actual message content
+   - Breakpoint #3: Hover over `content` → See the AI response text
+   - Breakpoint #4: Hover over `match` → Is pattern found?
+   - Breakpoint #5: Hover over `tool_name` → What tool was detected?
+   - Breakpoint #7 or #8: Which branch taken? Step determines routing!
+
+**Variables to Watch**:
+- Right-click breakpoint → Edit breakpoint → Add condition:
+  ```python
+  "use_tool:" in last_message.content  # Watch only when tool use detected
+  ```
+
+**Debug Console**:
+```python
+# Type these to understand routing:
+>>> state['messages'][-1].content  # See what LLM said
+>>> import re; re.search(r"use_tool:\s*(\w+)", state['messages'][-1].content)  # Test pattern
+>>> state['iteration_count']  # Check iteration limits
+>>> state['max_iterations']  # Check max allowed
+```
+
+---
+
+#### **Feature 2: Tool Integration - Watch Tool Execution**
+
+**File**: [src/agentic_platform/adapters/langgraph_agent.py#L152-L195](../src/agentic_platform/adapters/langgraph_agent.py#L152-L195)
+
+**Breakpoints to Set**:
+
+```python
+def tool_node(self, state: AgentState) -> AgentState:
+    """Execute tool and add result to state."""
+    # 🔴 BREAKPOINT #1: Entry
+    tool_name = state.get("current_tool")
+    tool_input = state.get("tool_input", {})
+    
+    if not tool_name:  # 🔴 BREAKPOINT #2: Check if tool specified
+        return state
+    
+    # 🔴 BREAKPOINT #3: Before tool lookup
+    try:
+        tool = self.tool_registry.get_tool(tool_name)  # 🔴 BREAKPOINT #4
+    except KeyError:
+        # Tool not found
+        error_msg = f"Tool '{tool_name}' not found"
+        return {**state, "error": error_msg}
+    
+    # 🔴 BREAKPOINT #5: Before execution
+    try:
+        result = tool.func(**tool_input)  # 🔴 BREAKPOINT #6: In execution
+    except Exception as e:
+        # 🔴 BREAKPOINT #7: Error handling
+        return {**state, "error": str(e)}
+    
+    # 🔴 BREAKPOINT #8: Before state update
+    new_messages = state.get("messages", []) + [
+        ToolMessage(content=str(result), tool_call_id=tool_name)
+    ]
+    
+    return {
+        **state,
+        "messages": new_messages,
+        "tool_results": [{"tool": tool_name, "result": result}]
+    }
+```
+
+**Watch Tool Execution**:
+
+1. **Set breakpoint #1** and run:
+   ```bash
+   pytest tests/unit/phase_9/test_stategraph_implementation.py::TestToolNodeImplementation -v -s
+   ```
+
+2. **At each breakpoint**:
+   - #2: Hover over `tool_name` → What tool was requested?
+   - #4: Hover over `tool` → Can tool be found in registry?
+   - #6: **Step into** `tool.func()` → See tool implementation
+   - #7: Check exception type if error occurs
+   - #8: Hover over `new_messages` → See message with tool result
+
+3. **Variables to Watch Panel**:
+   - Right-click variable → Add to Watch
+   - Watch: `state['current_tool']`
+   - Watch: `state['tool_input']`
+   - Watch: `state['messages']` (grows with each tool call)
+   - Watch: `result`
+
+**Debug Console Inspection**:
+```python
+# After execution, check state:
+>>> state['messages'][-1]  # Last message (tool result)
+>>> state.get('tool_results')  # All tool results accumulated
+>>> state.get('error')  # Any errors?
+```
+
+---
+
+#### **Feature 4: Message Accumulation - Watch State Flow**
+
+**File**: [src/agentic_platform/adapters/langgraph_agent.py#L105-L150](../src/agentic_platform/adapters/langgraph_agent.py#L105-L150)
+
+**Watch Message Accumulation**:
+
+```python
+def agent_node(self, state: AgentState) -> AgentState:
+    """Generate reasoning response."""
+    # 🔴 BREAKPOINT #1: Check incoming messages
+    messages = state.get("messages", [])
+    
+    # 🔴 BREAKPOINT #2: Before LLM call
+    response = self.llm.invoke(messages)  # 🔴 BREAKPOINT #3: LLM response
+    
+    # Messages accumulate here
+    # 🔴 BREAKPOINT #4: Before appending
+    new_messages = messages + [response]  # ← Accumulation!
+    
+    # 🔴 BREAKPOINT #5: Check accumulated state
+    return {
+        **state,
+        "messages": new_messages,  # ← Full history preserved
+        "iteration_count": state.get("iteration_count", 0) + 1
+    }
+```
+
+**Debug Steps**:
+
+1. Set breakpoint at line `messages = state.get("messages", [])`
+2. Run test:
+   ```bash
+   pytest tests/unit/phase_9/test_stategraph_implementation.py::TestStateFlowThroughGraph -v -s
+   ```
+3. At each breakpoint:
+   - #1: Hover over `messages` → How many messages so far?
+   - #2: Inspect list length before LLM call
+   - #3: Step into LLM, see what it returns
+   - #4: Use **inline watch** to see accumulation:
+     ```
+     ${messages.length}  # Old count
+     ```
+   - #5: Check `new_messages` → Count increased?
+
+**Add to Watch Panel**:
+- `len(state['messages'])` - See message count grow
+- `state['iteration_count']` - See iterations increase
+- `[msg.type for msg in state['messages']]` - See message types alternate (human, ai, tool, ai, ...)
+
+---
+
+#### **Feature 5: Error Resilience - Watch Error Handling**
+
+**File**: [src/agentic_platform/adapters/langgraph_agent.py](../src/agentic_platform/adapters/langgraph_agent.py)
+
+**Breakpoints for Error Paths**:
+
+```python
+# In agent_node:
+# 🔴 BREAKPOINT: Try-except block
+try:
+    response = self.llm.invoke(messages)  # ← May fail
+except Exception as e:
+    # 🔴 BREAKPOINT: Error caught
+    return {
+        **state,
+        "error": str(e),  # ← Error tracked
+        "messages": messages  # ← State preserved
+    }
+
+# In tool_node:
+# 🔴 BREAKPOINT: Tool execution
+try:
+    result = tool.func(**tool_input)  # ← May fail
+except Exception as e:
+    # 🔴 BREAKPOINT: Error caught
+    return {
+        **state,
+        "error": f"Tool error: {str(e)}"  # ← Captured
+    }
+
+# In router:
+# 🔴 BREAKPOINT: Iteration limit
+if state.get("iteration_count", 0) >= state.get("max_iterations", 10):
+    return "__end__"  # ← Forces exit even if tool requested
+```
+
+**Test Error Path**:
+
+```bash
+# Run error test with debugger:
+pytest tests/unit/phase_9/test_stategraph_implementation.py::TestGraphErrorHandling -v -s
+```
+
+**At Error Breakpoints**:
+- See exception details in variables panel
+- Inspect `state['error']` field
+- Check that `state['messages']` preserved
+- Verify iteration count respected
+
+---
+
+### Complete Debugging Workflow
+
+**Example: Debug Full Routing Decision**
+
+1. **Open test file**:
+   ```
+   tests/unit/phase_9/test_stategraph_implementation.py
+   ```
+
+2. **Set breakpoints** in test:
+   ```python
+   def test_router_detects_tool_use(self):
+       # 🔴 BREAKPOINT HERE
+       route = agent.router(state)  # Breakpoint on this line
+       assert route == "tool_node"
+   ```
+
+3. **Also set breakpoint** in implementation:
+   ```
+   src/agentic_platform/adapters/langgraph_agent.py:240  # router() entry
+   ```
+
+4. **Press F5** to start debugging
+
+5. **Step through routing decision**:
+   - **F10** (Step Over) - Move to next line
+   - **F11** (Step Into) - Enter function calls
+   - **Shift+F11** (Step Out) - Exit current function
+   - **F5** (Continue) - Run to next breakpoint
+
+6. **Inspect at each step**:
+   - Hover over variables
+   - Right-click → Add to Watch
+   - Use Debug Console to run Python code
+
+7. **Watch panel** shows live values as you step
+
+---
+
+### Conditional Breakpoints (Advanced)
+
+Set breakpoints that only pause when condition is true:
+
+**Right-click breakpoint → Edit Breakpoint**:
+
+```python
+# Only pause when tool use detected:
+"use_tool:" in content
+
+# Only pause on tool errors:
+isinstance(e, Exception) and tool_name is not None
+
+# Only pause after 3+ iterations:
+state.get('iteration_count', 0) > 3
+
+# Only pause on specific tool:
+tool_name == "search" or tool_name == "calculator"
+```
+
+---
+
+### Logpoints (Breakpoints That Print)
+
+Set a logpoint instead of stopping execution:
+
+**Right-click breakpoint → Add Logpoint** → Enter message:
+
+```python
+# Prints to Debug Console without stopping
+ROUTER: {content[:50]}... -> {match.group(1) if match else 'END'}
+
+TOOL: Executing {tool_name} with {tool_input}
+
+ACCUMULATION: Message count now {len(messages)}
+```
+
+---
+
+### Debug Console Commands
+
+While paused, type in Debug Console:
+
+```python
+# Inspect state
+>>> state
+>>> state['messages']
+>>> state['iteration_count']
+
+# Test router logic
+>>> "use_tool:" in last_message.content
+>>> import re; re.search(r"use_tool:\s*(\w+)", content)
+
+# Check tool registry
+>>> self.tool_registry.list_tools()
+>>> self.tool_registry.get_tool("calculator")
+
+# Evaluate expressions
+>>> len(state['messages'])
+>>> state['max_iterations'] - state['iteration_count']
+>>> [msg.type for msg in state['messages']]
+```
+
+---
+
+### Quick Reference: Breakpoint Checklist
+
+| Feature | File | Line | What to Watch |
+|---------|------|------|---------------|
+| **Graph Compile** | langgraph_agent.py | 277 | `graph` object, nodes, edges |
+| **Router** | langgraph_agent.py | 240 | `content`, `match`, return value |
+| **Tool Execution** | langgraph_agent.py | 160 | `tool_name`, `result`, error |
+| **Message Flow** | langgraph_agent.py | 115 | `len(messages)`, `new_messages` |
+| **Error Handling** | langgraph_agent.py | 145 | `e`, `state['error']` |
+| **State Updates** | langgraph_agent.py | 140 | `return` state dict |
+
+---
+
 ## Key Testing Insights
 
 ### 1. **Independent Node Testing**
