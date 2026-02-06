@@ -27,7 +27,7 @@ class TenantRegistry:
             name="Default Mock User",
             tier="free",
             kb_provider="mock",
-            ocr_provider="mock",
+            ocr_provider="google",
             features={"max_requests": 100}
         ),
         "startup_inc": TenantConfig(
