@@ -34,3 +34,11 @@ API key not configured for google
 Detected tool use: search_knowledge_base args={'query': 'What is the capital of France?'}
 DEBUG: Detected tool use: search_knowledge_base args={'query': 'What is the capital of France?'}
 INFO:     127.0.0.1:65152 - "POST /agent/execute HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65196 - "GET /list-samples/?t=1770413745218 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65197 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65201 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65203 - "GET /list-samples/?t=1770413745218 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65283 - "GET /list-samples/?t=1770413933827 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65284 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65286 - "GET /list-samples/?t=1770413933828 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65289 - "GET /mcp/tools HTTP/1.1" 200 OK
