@@ -4,6 +4,14 @@ A test-driven, extensible foundation for building AI workflows with **OCR**, **M
 
 **🌐 Live Demo:** https://agentic-platform-api-7erqohmwxa-uc.a.run.app/ | **✅ Status:** Phase 8 Complete | **🔄 Phase 9:** LangGraph (In Progress)
 
+## 🛠️ Tech Stack Strategy
+**Core Backend**: Python 3.12, FastAPI, Pydantic v2, Uvicorn (ASGI)  
+**Frontend**: React 18, TypeScript, Vite, Material UI v5  
+**AI & Agentic Frameworks**: LangChain (Core), LangGraph (Stateful Agents), MCP 1.0 (JSON-RPC), Google Cloud Vision API  
+**Enterprise Integration**: Provider Pattern, Multi-Tenancy (`TenantContext`), Mock & Enterprise Adapters  
+**Infrastructure**: Google Cloud Run (Serverless), Cloud Build (CI/CD), Docker  
+**Future Stack (Planned)**: Pinecone/Weaviate (Vector DB), PostgreSQL+RLS (State), OpenTelemetry (Observability)
+
 ## ✨ Currently Implemented (Phase 8 ✅)
 
 - **🏗️ Enterprise Architecture** - Adapter pattern, clean separation, plugin system for extensibility

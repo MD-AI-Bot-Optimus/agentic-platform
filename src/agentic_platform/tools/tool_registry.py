@@ -38,18 +38,66 @@ class ToolRegistry:
             },
             "required": ["image_path"]
         }
+        
+        # Lazy import to avoid circular dependencies if any
+        from ..integrations.factory import get_ocr_provider
+        
         def google_vision_ocr_handler(args):
-            ocr = GoogleVisionOCR(credentials_json=args.get("credentials_json"))
-            return ocr.ocr_image(args["image_path"])
+            provider = get_ocr_provider(credentials_json=args.get("credentials_json"))
+            return provider.ocr_image(args["image_path"])
+            
         self.register_tool(
             "google_vision_ocr",
             ocr_schema,
             google_vision_ocr_handler,
-            description="Extract text from images using Google Cloud Vision API"
+            description="Extract text from images using Google Cloud Vision API (or Mock)"
         )
 
     def _register_mock_tools(self):
         """Register mock tools for testing agent flows."""
+        # Register mock tools for UI Demos
+        self.register_tool(
+            name="process_data",
+            handler=lambda args: f"Processed: {args.get('data', 'no-data')}",
+            description="Mock tool for demo workflows (Identity).",
+            schema={"type": "object", "properties": {"data": {"type": "string"}}}
+        )
+        
+        self.register_tool(
+            name="generate_summary",
+            handler=lambda args: f"Summary of: {args.get('text', '')}",
+            description="Mock tool for demo workflows (Summary).",
+            schema={"type": "object", "properties": {"text": {"type": "string"}}}
+        )
+        
+        self.register_tool(
+            name="split_data",
+            handler=lambda args: {"chunk_a": "data_A", "chunk_b": "data_B"},
+            description="Mock tool for parallel demo.",
+            schema={"type": "object", "properties": {"data": {"type": "string"}}}
+        )
+
+        self.register_tool(
+            name="process_chunk_a",
+            handler=lambda args: f"Processed A: {args.get('chunk')}",
+            description="Mock tool for parallel demo.",
+            schema={"type": "object", "properties": {"chunk": {"type": "string"}}}
+        )
+
+        self.register_tool(
+            name="process_chunk_b",
+            handler=lambda args: f"Processed B: {args.get('chunk')}",
+            description="Mock tool for parallel demo.",
+            schema={"type": "object", "properties": {"chunk": {"type": "string"}}}
+        )
+
+        self.register_tool(
+            name="merge_results",
+            handler=lambda args: f"Merged: {args.get('res_a')} + {args.get('res_b')}",
+            description="Mock tool for parallel demo.",
+            schema={"type": "object", "properties": {"res_a": {"type": "string"}, "res_b": {"type": "string"}}}
+        )
+
         # 1. Search Knowledge Base Tool
         search_schema = {
             "type": "object",
@@ -59,16 +107,14 @@ class ToolRegistry:
             "required": ["query"]
         }
         
+        # Use Factory to get the configured provider (dynamically resolves tenant)
+        from ..integrations.factory import get_knowledge_base_provider
+        
         def search_handler(args):
-            query = args.get("query", "").lower()
-            if "neural network" in query:
-                return "Found 5 articles: 'Neural Networks 101', 'Deep Learning Basics', 'Backpropagation Explained'. Summary: Neural networks are computing systems inspired by biological brains..."
-            elif "transformer" in query:
-                return "Found 3 articles: 'Attention Is All You Need', 'BERT Architecture', 'GPT Models'. Summary: Transformers use self-attention to process sequential data in parallel..."
-            elif "langgraph" in query:
-                return "Found documentation: LangGraph is a library for building stateful, multi-agent applications with LLMs..."
-            else:
-                return f"Found 2 general articles about '{query}'. They discuss basic concepts and history."
+            query = args.get("query", "")
+            # Factory handles context resolution automatically now
+            provider = get_knowledge_base_provider() 
+            return provider.search(query)
                 
         self.register_tool(
             "search_knowledge_base",

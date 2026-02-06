@@ -11,37 +11,79 @@ const AGENT_PROMPTS = [
   "Who is the CEO of Google?"
 ];
 
+const RAG_SAMPLES = [
+  "What is the history of AI agents?",
+  "Explain the difference between TCP and UDP",
+  "How does the Google Vision API work?",
+  "What are the benefits of LangGraph?"
+];
+
+// Workflow Examples
 const WORKFLOW_EXAMPLES = {
   simple: `name: Simple Linear Flow
-steps:
+nodes:
+  - id: start
+    type: start
   - id: step1
-    function: process_data
-    inputs: 
+    type: tool
+    tool: process_data
+    args: 
       data: context.input
   - id: final
-    function: generate_summary
-    inputs:
+    type: tool
+    tool: generate_summary
+    args:
       text: step1.output
+  - id: end
+    type: end
+edges:
+  - from: start
+    to: step1
+  - from: step1
+    to: final
+  - from: final
+    to: end
 `,
   parallel: `name: Parallel Processing
-steps:
+nodes:
   - id: start
-    function: split_data
-    inputs: 
+    type: start
+  - id: split
+    type: tool
+    tool: split_data
+    args: 
       data: context.input
   - id: branch_a
-    function: process_chunk_a
-    inputs:
-      chunk: start.output.chunk_a
+    type: tool
+    tool: process_chunk_a
+    args:
+      chunk: split.output.chunk_a
   - id: branch_b
-    function: process_chunk_b
-    inputs:
-      chunk: start.output.chunk_b
+    type: tool
+    tool: process_chunk_b
+    args:
+      chunk: split.output.chunk_b
   - id: merge
-    function: merge_results
-    inputs:
+    type: tool
+    tool: merge_results
+    args:
       res_a: branch_a.output
       res_b: branch_b.output
+  - id: end
+    type: end
+edges:
+  - from: start
+    to: split
+  - from: split
+    to: branch_a
+  - from: split
+    to: branch_b
+  - from: branch_a
+    to: merge
+  - from: branch_b
+    to: merge
+  - from: merge
+    to: end
 `
 };
 
@@ -81,6 +123,27 @@ const DIAGRAMS = {
     
     TR-->>UI: { "result": { "content": [...] } }`,
 
+  rag: `sequenceDiagram
+    participant User
+    participant UI as RAG Tab
+    participant Backend
+    participant KB as Tool Registry (Mock DB)
+    
+    User->>UI: Input Query (e.g. "AI History")
+    UI->>Backend: POST /mcp/request (tool: search_knowledge_base)
+    
+    Backend->>KB: Call search_handler(query)
+    Note over KB: Checks keywords (if/else)
+    
+    alt Match Found
+        KB-->>Backend: Return specific content
+    else No Match
+        KB-->>Backend: Return general fallback
+    end
+    
+    Backend-->>UI: JSON Result
+    UI->>User: Display Content`,
+
   workflow: `stateDiagram-v2
     classDef start fill:#e1f5fe,stroke:#01579b,font-weight:bold
     classDef process fill:#e8f5e9,stroke:#2e7d32
@@ -94,19 +157,28 @@ const DIAGRAMS = {
     ExecuteStep2 --> FinalOutput:::endNode
     FinalOutput --> [*]`,
 
-  agent: `graph TD
-    classDef agent fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
-    classDef llm fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef tool fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
-    classDef router fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
-
-    User(User Prompt) -->|Input| Agent[ReAct Loop]:::agent
-    Agent -->|Context| LLM{Gemini 2.0}:::llm
-    LLM -->|Thought| Router{Action?}:::router
-    Router -->|Call Tool| Tool[Execute Tool]:::tool
-    Router -->|Answer| Final[Final Response]:::agent
-    Tool -->|Observation| Agent
-    Final -->|Output| User`
+  agent: `sequenceDiagram
+    participant User
+    participant Agent
+    participant LLM as LLM (Reasoning)
+    participant Tool as Tool (Execution)
+    
+    User->>Agent: Input Prompt
+    activate Agent
+    
+    loop ReAct Loop
+        Agent->>LLM: Context + Thought?
+        LLM-->>Agent: Thought: Need Action
+        
+        Agent->>Tool: Execute Action
+        Tool-->>Agent: Observation (Result)
+        
+        Agent->>LLM: Observation + Thought?
+        LLM-->>Agent: Final Answer
+    end
+    
+    Agent->>User: Final Response
+    deactivate Agent`
 };
 import pacificBg from './assets/pacific_bg.png';
 
@@ -277,6 +349,44 @@ function App() {
   const [agentLoading, setAgentLoading] = useState(false);
   const [agentError, setAgentError] = useState(null);
   const [expandedStep, setExpandedStep] = useState(null);
+
+  // RAG Tab State
+  const [ragQuery, setRagQuery] = useState('');
+  const [ragResult, setRagResult] = useState(null);
+  const [ragLoading, setRagLoading] = useState(false);
+  const [ragError, setRagError] = useState(null);
+
+  // RAG Handler
+  const handleRagSubmit = async (e) => {
+    e.preventDefault();
+    setRagLoading(true);
+    setRagError(null);
+    setRagResult(null);
+    try {
+      const response = await fetch(`${API_BASE_URL}/mcp/request`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          method: "tools/call",
+          params: {
+            name: "search_knowledge_base",
+            arguments: { query: ragQuery },
+          },
+          id: 1,
+        }),
+      });
+      if (!response.ok) throw new Error('API error: ' + response.status);
+      const data = await response.json();
+      setRagResult(data);
+    } catch (err) {
+      setRagError(err.message);
+    } finally {
+      setRagLoading(false);
+    }
+  };
 
   /* RE-APPLIED FIX: Dedicated Backend Fetch Process */
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -695,6 +805,23 @@ function App() {
               🔧 MCP Test
             </Button>
             <Button
+              onClick={() => setActiveView('rag')}
+              variant={activeView === 'rag' ? 'contained' : 'outlined'}
+              size="large"
+              sx={{
+                minWidth: '150px',
+                backgroundColor: activeView === 'rag' ? '#9c27b0' : 'transparent',
+                borderColor: '#9c27b0',
+                color: activeView === 'rag' ? '#fff' : '#9c27b0',
+                '&:hover': {
+                  backgroundColor: activeView === 'rag' ? '#7b1fa2' : 'rgba(156, 39, 176, 0.1)',
+                  borderColor: '#9c27b0',
+                }
+              }}
+            >
+              📚 RAG Search
+            </Button>
+            <Button
               onClick={() => setActiveView('workflow')}
               variant={activeView === 'workflow' ? 'contained' : 'outlined'}
               size="large"
@@ -768,16 +895,6 @@ function App() {
                   <Box sx={{ display: 'flex', gap: 2 }}>
                     <Button type="submit" variant="contained" color="primary" disabled={ocrLoading || (!ocrImage && !previewUrl)} sx={{ flex: 1, fontWeight: 600, fontSize: '1rem', py: 1.2 }}>
                       {ocrLoading ? <CircularProgress size={24} color="inherit" /> : 'Run OCR Extraction'}
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      color="secondary"
-                      onClick={handleAnalyzeQuality}
-                      disabled={(!ocrImage && !previewUrl) || qualityLoading}
-                      sx={{ minWidth: '150px' }}
-                      startIcon={qualityLoading ? <CircularProgress size={20} color="inherit" /> : <span>📊</span>}
-                    >
-                      Check Quality
                     </Button>
                   </Box>
 
@@ -1054,6 +1171,116 @@ function App() {
                       <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#999' }}>Raw JSON-RPC Response:</Typography>
                       {JSON.stringify(mcpResult, null, 2)}
                     </Box>
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {activeView === 'rag' && (
+            <Card sx={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)', borderRadius: 2, borderTop: '4px solid #9c27b0' }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#9c27b0' }}>📚 RAG Search</Typography>
+                  <Button size="small" variant="outlined" startIcon={<span>🏗️</span>} onClick={() => handleOpenArch('rag')}>
+                    View Architecture
+                  </Button>
+                </Box>
+                <LearningBanner
+                  concept="Retrieval Augmented Generation"
+                  icon="🧠"
+                  description="Search the internal knowledge base for specific topics. This uses the 'search_knowledge_base' MCP tool to retrieve relevant context before answering."
+                />
+
+                {/* Knowledge Base Source Info */}
+                <Box sx={{ mb: 3, border: '1px solid #e0e0e0', borderRadius: 2, overflow: 'hidden' }}>
+                  <Box sx={{ bgcolor: '#f5f5f5', px: 2, py: 1, borderBottom: '1px solid #e0e0e0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600, color: '#666' }}>
+                      📂 Knowledge Base Source:
+                    </Typography>
+                    <code style={{ fontSize: '0.75rem', color: '#666' }}>src/agentic_platform/integrations/knowledge_base.py</code>
+                  </Box>
+                  <Box sx={{ p: 2, bgcolor: '#fafafa' }}>
+                    <Typography variant="body2" sx={{ mb: 1, color: '#555' }}>
+                      Architecture: <strong>Provider Pattern</strong>. Configurable via <code>KB_PROVIDER</code> (mock vs enterprise).
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#888' }}>Enterprise Implementation (Simulation):</Typography>
+                    <Box component="pre" sx={{
+                      m: 0,
+                      p: 1.5,
+                      bgcolor: '#263238',
+                      color: '#eceff1',
+                      borderRadius: 1,
+                      fontSize: '0.75rem',
+                      overflowX: 'auto',
+                      fontFamily: 'Menlo, Monaco, Consolas, "Courier New", monospace'
+                    }}>
+                      {`class EnterpriseKnowledgeBase(KnowledgeBaseProvider):
+    def search(self, query: str) -> str:
+        # Simulate network latency
+        time.sleep(0.2)
+        return (
+            f"--- ENTERPRISE SEARCH RESULT ---\\n"
+            f"Source: Corporate Knowledge Vector Store (Shard US-East-1)\\n"
+            f"Access Control: Verified (User: agent-service-account)\\n"
+            f"--------------------------------\\n"
+            f"Top Matches for '{query}':..."
+        )`}
+                    </Box>
+                  </Box>
+                </Box>
+
+                <Box component="form" onSubmit={handleRagSubmit} sx={{ mb: 4 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Knowledge Base Query</Typography>
+                  {/* Quick Samples */}
+                  <Box sx={{ mb: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                    {RAG_SAMPLES.map((q, i) => (
+                      <Button
+                        key={i}
+                        size="small"
+                        variant="outlined"
+                        onClick={() => setRagQuery(q)}
+                        sx={{ textTransform: 'none', borderRadius: 4, borderColor: '#e1bee7', color: '#8e24aa' }}
+                      >
+                        {q}
+                      </Button>
+                    ))}
+                  </Box>
+
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <TextField
+                      fullWidth
+                      value={ragQuery}
+                      onChange={e => setRagQuery(e.target.value)}
+                      placeholder="e.g., Explain the difference between TCP and UDP"
+                      variant="outlined"
+                      sx={{ bgcolor: '#fff' }}
+                    />
+                    <Button type="submit" variant="contained" color="secondary" disabled={ragLoading} sx={{ px: 3, fontWeight: 700 }}>
+                      {ragLoading ? <CircularProgress size={24} color="inherit" /> : 'Search'}
+                    </Button>
+                  </Box>
+                </Box>
+
+                {ragError && <Alert severity="error" sx={{ mb: 2 }}>{ragError}</Alert>}
+
+                {ragResult && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="h6" fontWeight={600} gutterBottom>Search Results</Typography>
+                    {/* Smart Parsing for RAG Content */}
+                    {ragResult.result && ragResult.result.content && Array.isArray(ragResult.result.content) ? (
+                      ragResult.result.content.map((item, idx) => (
+                        <Box key={idx} sx={{ background: '#f3e5f5', borderRadius: 2, p: 2, mb: 2, borderLeft: '4px solid #9c27b0' }}>
+                          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                            {item.text}
+                          </Typography>
+                        </Box>
+                      ))
+                    ) : (
+                      <Box component="pre" sx={{ background: '#f6f8fa', borderRadius: 2, p: 2, fontSize: '0.85rem', overflowX: 'auto' }}>
+                        {JSON.stringify(ragResult, null, 2)}
+                      </Box>
+                    )}
                   </Box>
                 )}
               </CardContent>
