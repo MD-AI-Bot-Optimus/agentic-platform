@@ -54,7 +54,9 @@ class LLMConfig:
         LLMProvider.GOOGLE: [
             "gemini-1.5-pro",
             "gemini-1.5-flash",
+            "gemini-2.0-flash", # Added per user request
             "gemini-2",
+            "gemini-3-pro",
         ],
         LLMProvider.MOCK: [
             "mock-llm"
@@ -73,7 +75,7 @@ class LLMConfig:
     API_KEYS = {
         LLMProvider.ANTHROPIC: os.getenv("ANTHROPIC_API_KEY"),
         LLMProvider.OPENAI: os.getenv("OPENAI_API_KEY"),
-        LLMProvider.GOOGLE: os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+        LLMProvider.GOOGLE: os.getenv("GOOGLE_API_KEY") or os.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
     }
     
     @classmethod
@@ -191,16 +193,31 @@ def get_llm_model(model: Optional[str] = None, provider: Optional[str] = None) -
             raise ValueError("langchain-openai not installed. Install with: pip install langchain-openai")
     
     elif prov == LLMProvider.GOOGLE:
+        # Try Vertex AI first (Enterprise)
+        if os.getenv("GCP_PROJECT_ID") and os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+            try:
+                from langchain_google_vertexai import ChatVertexAI
+                logger.info(f"Using Google Vertex AI Gemini (model: {model_name})")
+                return ChatVertexAI(
+                    model=model_name,
+                    project=os.getenv("GCP_PROJECT_ID"),
+                    location=os.getenv("GOOGLE_VERTEX_LOCATION", "us-central1")
+                )
+            except ImportError:
+                logger.warning("langchain-google-vertexai not installed, trying AI Studio...")
+        
+        # Fallback to AI Studio (API Key)
         try:
-            from langchain_google_vertexai import ChatVertexAI
-            logger.info(f"Using Google Vertex AI Gemini (model: {model_name})")
-            return ChatVertexAI(
-                model=model_name,
-                project=os.getenv("GCP_PROJECT_ID"),
-                location=os.getenv("GOOGLE_VERTEX_LOCATION", "us-central1")
-            )
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            api_key = LLMConfig.API_KEYS[LLMProvider.GOOGLE]
+            # If key is not in enviroment, check if user provided it differently or rely on library default
+            if not api_key and not os.getenv("GOOGLE_API_KEY"):
+                 raise ValueError("GOOGLE_API_KEY not set for AI Studio access")
+            
+            logger.info(f"Using Google AI Studio Gemini (model: {model_name})")
+            return ChatGoogleGenerativeAI(model=model_name, google_api_key=api_key)
         except ImportError:
-            raise ValueError("langchain-google-vertexai not installed. Install with: pip install langchain-google-vertexai")
+            raise ValueError("langchain-google-genai not installed. Install with: pip install langchain-google-genai")
     
     else:
         raise ValueError(f"Unsupported provider: {prov}")

@@ -51,44 +51,74 @@ class MockLLM(Runnable):
         self._call_count = 0
         logger.info(f"Initialized MockLLM (deterministic={deterministic})")
     
+    
     def invoke(self, input: Any, config=None) -> AIMessage:
         """Invoke the mock LLM."""
         self._call_count += 1
         
-        # Handle both string input and message list input
-        if isinstance(input, str):
-            prompt_text = input
-        elif isinstance(input, list) and len(input) > 0:
+        # Determine strict prompt text but pass full context if available
+        messages = []
+        if isinstance(input, list):
+            messages = input
             last_message = input[-1]
             prompt_text = last_message.content if hasattr(last_message, 'content') else str(last_message)
         else:
             prompt_text = str(input)
         
-        # Generate deterministic response
-        response = self._generate_response(prompt_text)
+        # Generate response based on full context (to detect tool outputs)
+        response = self._generate_response(prompt_text, messages)
         return AIMessage(content=response)
     
-    def _generate_response(self, prompt: str) -> str:
-        """Generate a mock response based on prompt."""
-        prompt_lower = prompt.lower()
+    def _generate_response(self, prompt: str, messages: List[Any] = None) -> str:
+        """
+        Generate a mock response based on prompt and context.
         
-        # Simple pattern matching for deterministic responses
-        if "ocr" in prompt_lower or "extract text" in prompt_lower:
-            return "I'll extract text from the image using OCR. The image contains important business information with good clarity."
-        elif "classify" in prompt_lower or "document type" in prompt_lower:
-            return "I'll classify the document. Based on the content, this appears to be a business document like an invoice or contract."
-        elif "sentiment" in prompt_lower or "emotion" in prompt_lower:
-            return "The sentiment of this text is positive. The language used is professional and constructive."
-        elif "summarize" in prompt_lower or "summary" in prompt_lower:
-            return "Here's a summary: The document contains key information about business processes and agreements."
-        elif "what is" in prompt_lower and "+" in prompt_lower:
-            # Simple math
-            if "2+2" in prompt or "2 + 2" in prompt:
-                return "2 + 2 = 4"
-            return "The result is calculated correctly."
+        Simulates:
+        1. Planning (deciding to use a tool)
+        2. Answering (using tool output)
+        """
+        prompt_lower = prompt.lower()
+        messages = messages or []
+        
+        # Check if we just received a tool output
+        last_msg = messages[-1] if messages else None
+        is_tool_output = hasattr(last_msg, 'tool_call_id') or (isinstance(last_msg, dict) and last_msg.get("type") == "tool")
+        
+        # Scenario 1: Final Answer (Pass 2 - After Tool Execution)
+        if is_tool_output:
+            return self._generate_final_answer(last_msg.content)
+            
+        # Scenario 2: Decide to use Tool (Pass 1 - Initial Prompt)
+        # We simulate tool use for "what is..." questions to show the graph animation
+        if "what is" in prompt_lower or "explain" in prompt_lower:
+            return f'use_tool: search_knowledge_base with query="{prompt}"'
+            
+        # Fallback: Immediate knowledge-based answer (No tool)
+        return self._generate_knowledge_answer(prompt)
+
+    def _generate_final_answer(self, tool_output: str) -> str:
+        """Generate final answer based on tool output and model persona."""
+        prefix = ""
+        if "gemini-2.0-flash" in self.model:
+            prefix = "⚡ [Gemini 2.0 Flash] Speedily analyzed: "
+        elif "gemini-1.5-pro" in self.model:
+            prefix = "🧠 [Gemini 1.5 Pro] Deep contextual analysis: "
         else:
-            return "I understand your request and I'm ready to help process documents and extract information as needed."
-    
+            prefix = "MOCK ANSWER: "
+            
+        return f"{prefix}Based on the knowledge base search, {tool_output} I hope this detailed explanation helps!"
+
+    def _generate_knowledge_answer(self, prompt: str) -> str:
+        """Generate a static knowledge answer without tool use."""
+        prompt_lower = prompt.lower()
+        if "ocr" in prompt_lower:
+            return "I'll extract text from the image using OCR. The image contains important business information."
+        elif "hello" in prompt_lower or "hi" in prompt_lower:
+            return "Hello! I'm the LangGraph Agent demo. Ask me 'What is a neural network?' to see me use my tools!"
+        else:
+            return (f"MOCK ANSWER: I received your request: '{prompt}'. "
+                    "Try asking 'What is [topic]?' to see multi-step reasoning in action!")
+
     def batch(self, inputs, config=None, **kwargs):
         """Batch invoke the mock LLM."""
         return [self.invoke(input_item, config) for input_item in inputs]
@@ -115,13 +145,14 @@ class RandomMockLLM(MockLLM):
     def __init__(self, model: str = "mock-llm-random", **kwargs):
         super().__init__(model=model, deterministic=False, **kwargs)
     
-    def _generate_response(self, prompt: str) -> str:
+    def _generate_response(self, prompt: str, messages: List[Any] = None) -> str:
         """Get varied mock response."""
         import random
+        # Just delegate to basic string logic for random mock for now to avoid complexity
+        base = super()._generate_knowledge_answer(prompt)
         responses = [
-            "Mock response variant 1: Analysis complete.",
-            "Mock response variant 2: Processing successful.",
-            "Mock response variant 3: Task completed.",
-            super()._generate_response(prompt),  # Also include base response sometimes
+            f"Variant A: {base}",
+            f"Variant B: {base}",
+            base
         ]
         return random.choice(responses)

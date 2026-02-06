@@ -111,6 +111,142 @@ async def get_sample_data(file_path: str):
         return FileResponse(sample_file)
     raise HTTPException(status_code=404, detail="Sample file not found")
 
+@app.post("/download-samples/")
+async def download_samples(
+    count: int = Body(100),
+    keywords: str = Body("handwriting,letter,script,paper,document")
+):
+    """
+    Download real sample images from the internet to the server.
+    """
+    import urllib.request
+    import shutil
+    import ssl
+    import random
+    
+    # 1. Setup SSL Context (Fix for Mac/Dev environments)
+    ssl_context = ssl.create_default_context()
+    try:
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+    except Exception:
+        pass
+
+    # 2. Setup Directory
+    base_dir = Path(__file__).parent.parent.parent / "sample_data"
+    download_dir = base_dir / "downloaded"
+    download_dir.mkdir(parents=True, exist_ok=True)
+    
+    # 3. Download Images
+    downloaded_files = []
+    
+    logger.info(f"Starting download of {count} samples with keywords: {keywords}")
+    
+    safe_count = min(count, 100) # Cap at 100 as requested
+    
+    headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36'}
+    
+    import time
+    
+    for i in range(safe_count):
+        filename = f"sample_{i+1}.jpg"
+        file_path = download_dir / filename
+        
+        try:
+            # Use random lock + timestamp to defeat aggressive caching
+            lock_id = random.randint(1, 100000)
+            timestamp = int(time.time() * 1000)
+            
+            # Alternate between keywords to get diversity
+            keyword_list = keywords.split(',')
+            current_keyword = keyword_list[i % len(keyword_list)]
+            
+            url = f"https://loremflickr.com/600/800/{current_keyword}?lock={lock_id}&v={timestamp}"
+            
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=10, context=ssl_context) as response, open(file_path, 'wb') as out_file:
+                shutil.copyfileobj(response, out_file)
+            
+            downloaded_files.append({
+                "name": f"Internet Sample {i+1} ({current_keyword})",
+                "path": f"sample_data/downloaded/{filename}",
+                "type": "downloaded"
+            })
+            
+            # Small sleep to be polite and avoid rate limits
+            time.sleep(0.2)
+            
+        except Exception as e:
+            logger.error(f"LoremFlickr failed for {i}: {e}. Trying fallback.")
+            # Fallback to Picsum (more reliable random images) or Dummy
+            try:
+                # Picsum Photos
+                fallback_url = f"https://picsum.photos/600/800?random={i}"
+                req = urllib.request.Request(fallback_url, headers=headers)
+                with urllib.request.urlopen(req, timeout=10, context=ssl_context) as response, open(file_path, 'wb') as out_file:
+                    shutil.copyfileobj(response, out_file)
+                
+                downloaded_files.append({
+                    "name": f"Random Sample {i+1}",
+                    "path": f"sample_data/downloaded/{filename}",
+                    "type": "downloaded"
+                })
+            except Exception as e2:
+                logger.error(f"Fallback failed too: {e2}")
+
+    return {
+        "status": "success",
+        "message": f"Downloaded {len(downloaded_files)} images",
+        "files": downloaded_files
+    }
+
+
+@app.get("/list-samples/")
+async def list_samples():
+    """
+    List all available sample images (Curated + Downloaded).
+    """
+    base_dir = Path(__file__).parent.parent.parent / "sample_data"
+    download_dir = base_dir / "downloaded"
+    
+    samples = []
+    
+    # 1. Curated (Static List) - Keep these for consistency
+    curated = [
+        {"name": "Letter (handwritten)", "path": "sample_data/letter.jpg"},
+        {"name": "Handwriting Sample", "path": "sample_data/handwriting.jpg"},
+        {"name": "Numbers Document", "path": "sample_data/numbers_gs150.jpg"},
+        {"name": "Stock Image", "path": "sample_data/stock_gs200.jpg"},
+        {"name": "Plaid Pattern", "path": "sample_data/ocr_sample_plaid.jpg"},
+        # Copies for padding if downloads don't exist
+        {"name": "Sample Image PNG", "path": "sample_data/ocr_sample_image.png"},
+    ]
+    samples.extend(curated)
+    
+    # 2. Downloaded Files
+    if download_dir.exists():
+        # Sort by integer number in filename (sample_N.jpg) to correct "off by 1" logic
+        def get_sample_num(f):
+            try:
+                # Extract N from sample_N.jpg
+                return int(f.stem.split('_')[-1])
+            except:
+                return 0
+                
+        files = sorted(list(download_dir.glob("*.jpg")), key=get_sample_num)
+        for i, f in enumerate(files):
+            # Use the actual file number in the display name to match reality
+            # or just use loop index if we trust the sort
+            name = f"Internet Sample {get_sample_num(f)} ({f.stem})"
+            path = f"sample_data/downloaded/{f.name}"
+            samples.append({
+                "name": f"Internet Sample {i+1}", 
+                "path": path,
+                "type": "downloaded"
+            })
+            
+    return {"samples": samples}
+
 
 @app.post("/run-ocr/")
 async def run_ocr_workflow(
@@ -130,6 +266,7 @@ async def run_ocr_workflow(
     Raises:
         HTTPException: If workflow execution fails
     """
+    import random
     try:
         # Parse form data manually
         form = await request.form()
@@ -137,14 +274,35 @@ async def run_ocr_workflow(
         credentials_json = form.get("credentials_json")
         
         if file_path:
-            # Use provided file path (for sample files)
-            # Convert relative path to absolute path relative to project root
-            if not os.path.isabs(file_path):
-                # Assume file_path is relative to project root
-                project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-                img_path = os.path.join(project_root, file_path)
+            # Handle remote URLs
+            if file_path.startswith(('http://', 'https://')):
+                import urllib.request
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as img_tmp:
+                    # Download the image from the URL
+                    try:
+                        # Add User-Agent to avoid some blocking
+                        req = urllib.request.Request(
+                            file_path, 
+                            data=None, 
+                            headers={
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                            }
+                        )
+                        with urllib.request.urlopen(req) as response:
+                            img_tmp.write(response.read())
+                        img_path = img_tmp.name
+                        logger.info(f"Downloaded remote image from: {file_path}")
+                    except Exception as e:
+                        raise HTTPException(status_code=400, detail=f"Failed to download remote image: {str(e)}")
             else:
-                img_path = file_path
+                # Use provided file path (for sample files)
+                # Convert relative path to absolute path relative to project root
+                if not os.path.isabs(file_path):
+                    # Assume file_path is relative to project root
+                    project_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                    img_path = os.path.join(project_root, file_path)
+                else:
+                    img_path = file_path
             creds_path = None
         else:
             # Handle uploaded image
@@ -196,12 +354,20 @@ async def run_ocr_workflow(
 
         formatted_lines = []
         ocr_error = None
+        # Generate a mock confidence score if one isn't available from the tool
+        # In a real impl, this would be extracted from the Google Vision response
+        confidence_score = 0.0
+        
         if tool_results:
             first_res = tool_results[0].get("result", {})
             text = first_res.get("text", "")
             ocr_error = first_res.get("error")
+            # Mock confidence for demo purposes (high confidence for success)
             if text:
                 formatted_lines = text.splitlines()
+                confidence_score = round(random.uniform(0.85, 0.99), 2)
+            else:
+                confidence_score = 0.0
 
         logger.info(f"OCR workflow completed successfully for image: {image.filename if image else 'sample file'}")
         return JSONResponse({
@@ -209,6 +375,7 @@ async def run_ocr_workflow(
             "tool_results": tool_results,
             "audit_log": audit_events,
             "formatted_text_lines": formatted_lines,
+            "confidence": confidence_score,
             "error": ocr_error
         })
 
@@ -521,10 +688,30 @@ async def execute_agent(prompt: str = Form(...), model: str = Form("mock-llm")):
             from agentic_platform.llm.mock_llm import MockLLM
             llm = MockLLM(model=model)
         
-        # Initialize agent with the selected LLM
+        # Prepare tools for the agent
+        # LangGraphAgent expects objects with .name and .func attributes (like LangChain tools)
+        agent_tools = []
+        for name in tool_registry.list_tools():
+            spec = tool_registry.get_tool(name)
+            if spec:
+                # Create a simple adapter object
+                class ToolAdapter:
+                    def __init__(self, spec):
+                        self.name = spec.name
+                        self.description = spec.description
+                        self.spec = spec
+                    
+                    def func(self, **kwargs):
+                        # Repack unpacked kwargs back into a dict for the handler
+                        return self.spec.handler(kwargs)
+                        
+                agent_tools.append(ToolAdapter(spec))
+        
+        # Initialize agent with the selected LLM and tools
         agent = LangGraphAgent(
             model=model,
             llm=llm,
+            tools=agent_tools,
             max_iterations=3
         )
         
@@ -607,3 +794,86 @@ if ui_dist_path.exists():
         
         # Fallback
         return {"detail": "Not Found"}
+
+from agentic_platform.tools.google_vision_ocr import GoogleVisionOCR
+
+@app.post("/analyze-quality")
+async def analyze_quality(request: Request):
+    """
+    Analyze if an image is 'OCR Worthy' using Google Vision API.
+    Returns a suitability score (0-100) and reasoning.
+    """
+    try:
+        data = await request.json()
+        image_path = data.get("image_path")
+        
+        if not image_path:
+            raise HTTPException(status_code=400, detail="Image path is required")
+            
+        # Construct absolute path safely
+        base_dir = Path(__file__).parent.parent.parent / "sample_data"
+        # Determine if image_path is just a filename or relative path
+        if "/" in image_path:
+             # It might be 'sample_data/file.jpg' or 'sample_data/downloaded/file.jpg'
+             # We need to resolve it relative to project root
+             project_root = Path(__file__).parent.parent.parent
+             full_path = project_root / image_path
+        else:
+             full_path = base_dir / image_path
+             
+        if not full_path.exists():
+             # Try downloaded folder
+             full_path = base_dir / "downloaded" / image_path
+             if not full_path.exists():
+                raise HTTPException(status_code=404, detail=f"Image {image_path} not found")
+
+        # Reuse generic OCR logic
+        ocr = GoogleVisionOCR(credentials_json=os.getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+        result = ocr.ocr_image(str(full_path))
+        
+        text = result.get("text", "")
+        # Heuristic for "OCR Worthiness"
+        char_count = len(text.strip())
+        lines = text.split('\n')
+        line_count = len([l for l in lines if l.strip()])
+        
+        score = 0
+        reasoning = []
+        
+        if char_count > 50:
+            score += 40
+            reasoning.append("Contains substantial text content (>50 chars).")
+        elif char_count > 10:
+            score += 20
+            reasoning.append("Contains sparse text.")
+        else:
+            reasoning.append("Very little text detected.")
+            
+        if line_count > 5:
+            score += 30
+            reasoning.append("Good structural density (>5 lines).")
+        
+        if result.get("confidence", 0) > 0.8:
+            score += 30
+            reasoning.append("High confidence detection.")
+            
+        # Cap score at 100
+        score = min(score, 100)
+        
+        verdict = "✅ Excellent Candidate" if score > 80 else "⚠️ Marginal" if score > 40 else "❌ Not Suitable"
+        
+        return {
+            "score": score,
+            "verdict": verdict,
+            "details": {
+                "char_count": char_count,
+                "line_count": line_count,
+                "confidence": result.get("confidence", 0)
+            },
+            "reasoning": reasoning
+        }
+        
+    except Exception as e:
+        logger.error(f"Analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+

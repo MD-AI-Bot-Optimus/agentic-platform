@@ -1,5 +1,113 @@
 import React, { useState } from 'react';
-import { Container, Typography, Button, Card, CardContent, Box, Alert, CircularProgress, FormControl, InputLabel, Select, MenuItem, TextField, Grid } from '@mui/material';
+import { Container, Typography, Button, Card, CardContent, Box, Alert, CircularProgress, FormControl, InputLabel, Select, MenuItem, TextField, Grid, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
+import MermaidDiagram from './components/MermaidDiagram';
+
+// Architecture Diagrams
+const AGENT_PROMPTS = [
+  "What is the capital of France?",
+  "Research the history of AI agents.",
+  "Write a Python script to calculate Fibonacci numbers.",
+  "Explain the difference between TCP and UDP.",
+  "Who is the CEO of Google?"
+];
+
+const WORKFLOW_EXAMPLES = {
+  simple: `name: Simple Linear Flow
+steps:
+  - id: step1
+    function: process_data
+    inputs: 
+      data: context.input
+  - id: final
+    function: generate_summary
+    inputs:
+      text: step1.output
+`,
+  parallel: `name: Parallel Processing
+steps:
+  - id: start
+    function: split_data
+    inputs: 
+      data: context.input
+  - id: branch_a
+    function: process_chunk_a
+    inputs:
+      chunk: start.output.chunk_a
+  - id: branch_b
+    function: process_chunk_b
+    inputs:
+      chunk: start.output.chunk_b
+  - id: merge
+    function: merge_results
+    inputs:
+      res_a: branch_a.output
+      res_b: branch_b.output
+`
+};
+
+const DIAGRAMS = {
+  ocr: `graph LR
+    %% Styles
+    classDef blue fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#01579b
+    classDef green fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#2e7d32
+    classDef orange fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#ef6c00
+    classDef user fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#7b1fa2
+
+    User((User)):::user -->|Uploads Image| Frontend[React UI]:::blue
+    Frontend -->|POST /run-ocr| API[FastAPI Backend]:::green
+    API -->|Instantiates| Wrapper[GoogleVisionOCR Tool]:::green
+    Wrapper -->|Sends Bytes| Cloud[Google Cloud Vision]:::orange
+    Cloud -->|Returns JSON| Wrapper
+    Wrapper -->|Parses Text| API
+    API -->|Returns Result| Frontend`,
+
+  mcp: `sequenceDiagram
+    participant UI as Frontend (React)
+    participant TR as ToolRegistry (Python)
+    participant Tool as Tool Function
+    
+    rect rgb(240, 248, 255)
+    Note over UI,TR: JSON-RPC 2.0 Request
+    UI->>TR: POST /mcp/request
+    end
+    
+    TR->>TR: Validate Method & Params
+    
+    rect rgb(255, 250, 240)
+    Note over TR,Tool: Execution
+    TR->>Tool: Call Implementation
+    Tool-->>TR: Return Data
+    end
+    
+    TR-->>UI: { "result": { "content": [...] } }`,
+
+  workflow: `stateDiagram-v2
+    classDef start fill:#e1f5fe,stroke:#01579b,font-weight:bold
+    classDef process fill:#e8f5e9,stroke:#2e7d32
+    classDef endNode fill:#ffebee,stroke:#c62828
+
+    [*] --> Start:::start
+    Start --> ParseYAML:::process
+    ParseYAML --> CompileGraph:::process
+    CompileGraph --> ExecuteStep1:::process
+    ExecuteStep1 --> ExecuteStep2:::process
+    ExecuteStep2 --> FinalOutput:::endNode
+    FinalOutput --> [*]`,
+
+  agent: `graph TD
+    classDef agent fill:#e3f2fd,stroke:#1565c0,stroke-width:2px
+    classDef llm fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef tool fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
+    classDef router fill:#fff9c4,stroke:#fbc02d,stroke-width:2px
+
+    User(User Prompt) -->|Input| Agent[ReAct Loop]:::agent
+    Agent -->|Context| LLM{Gemini 2.0}:::llm
+    LLM -->|Thought| Router{Action?}:::router
+    Router -->|Call Tool| Tool[Execute Tool]:::tool
+    Router -->|Answer| Final[Final Response]:::agent
+    Tool -->|Observation| Agent
+    Final -->|Output| User`
+};
 import pacificBg from './assets/pacific_bg.png';
 
 // Modern art background styles with pacific image from past
@@ -83,22 +191,75 @@ const defaultMcpTools = [
 ];
 
 
+// Educational Banner Component
+const LearningBanner = ({ title, description, codeRef, concept, icon }) => (
+  <Box sx={{
+    background: 'linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%)',
+    borderRadius: 2,
+    p: 2,
+    mb: 3,
+    border: '1px solid #bbdefb',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+  }}>
+    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+      <Typography sx={{ fontSize: '2rem' }}>{icon}</Typography>
+      <Box>
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#1565c0', display: 'flex', alignItems: 'center', gap: 1 }}>
+          🎓 How this works: <span style={{ background: '#fff', padding: '2px 8px', borderRadius: '4px', border: '1px solid #90caf9', fontSize: '0.8rem', color: '#1976d2' }}>{concept}</span>
+        </Typography>
+        <Typography variant="body2" sx={{ mt: 1, color: '#0d47a1', lineHeight: 1.6 }}>
+          {description}
+        </Typography>
+        {codeRef && (
+          <Box sx={{ mt: 1.5, display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Typography variant="caption" sx={{ fontWeight: 600, color: '#555' }}>Code Reference:</Typography>
+            <code style={{ background: 'rgba(255,255,255,0.7)', padding: '2px 6px', borderRadius: '4px', fontSize: '0.8rem', fontFamily: 'monospace', border: '1px solid #ddd' }}>
+              {codeRef}
+            </code>
+          </Box>
+        )}
+      </Box>
+    </Box>
+  </Box>
+);
+
+
+
 function App() {
   const [activeView, setActiveView] = useState('ocr');
+  // ... existing state ...
+  // (We need to keep the state definitions, so I will target specific insertion points below instead of replacing the whole App)
+  // But since I cannot do multiple disjoint edits easily in one go without 'multi_replace', 
+  // and I don't see 'multi_replace' in my allowed tools (wait, I do check: yes, I have multi_replace_file_content).
+  // I will use multi_replace_file_content for this.
+
 
   // Workflow state
   const [workflowFile, setWorkflowFile] = useState(null);
   const [inputFile, setInputFile] = useState(null);
   const [adapter, setAdapter] = useState('mcp');
+
+  // Architecture Modal State
+  const [archModalOpen, setArchModalOpen] = useState(false);
+  const [currentDiagram, setCurrentDiagram] = useState(null);
+
+  const handleOpenArch = (type) => {
+    setCurrentDiagram(DIAGRAMS[type]);
+    setArchModalOpen(true);
+  };
+
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
 
   // OCR demo state
   const [ocrImage, setOcrImage] = useState(null);
   const [ocrResult, setOcrResult] = useState(null);
   const [ocrLoading, setOcrLoading] = useState(false);
   const [ocrError, setOcrError] = useState(null);
+  const [qualityResult, setQualityResult] = useState(null);
+  const [qualityLoading, setQualityLoading] = useState(false);
 
   // MCP demo state
   const [mcpToolName, setMcpToolName] = useState('google_vision_ocr');
@@ -117,17 +278,73 @@ function App() {
   const [agentError, setAgentError] = useState(null);
   const [expandedStep, setExpandedStep] = useState(null);
 
-  // Sample data files for quick selection
-  const sampleDataFiles = [
-    { path: 'sample_data/letter.jpg', name: 'Letter (handwritten)' },
-    { path: 'sample_data/handwriting.jpg', name: 'Handwriting Sample' },
-    { path: 'sample_data/numbers_gs150.jpg', name: 'Numbers Document' },
-    { path: 'sample_data/stock_gs200.jpg', name: 'Stock Image' },
-    { path: 'sample_data/ocr_sample_plaid.jpg', name: 'Plaid Pattern' },
-    { path: 'sample_data/ocr_sample_image.png', name: 'Sample Image PNG' },
-    { path: 'sample_data/ocr_sample_text.png', name: 'Sample Text PNG' },
-    { path: 'sample_data/sample_image.png', name: 'Basic Sample' },
-  ];
+  /* RE-APPLIED FIX: Dedicated Backend Fetch Process */
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [visibleSamples, setVisibleSamples] = useState([]);
+  const [isFetchingSamples, setIsFetchingSamples] = useState(false);
+  const [openConfirm, setOpenConfirm] = useState(false); // Confirmation dialog state
+
+  // Load samples from backend on mount
+  const loadSamplesFromBackend = async () => {
+    try {
+      // Add timestamp to prevent caching
+      const res = await fetch(`${API_BASE_URL}/list-samples/?t=${Date.now()}`);
+      if (res.ok) {
+        const data = await res.json();
+        const mapped = data.samples.map((s, i) => ({
+          ...s,
+          url: `${API_BASE_URL}/${s.path}`,
+          id: `sample-${i}`,
+          displayName: s.name
+        }));
+        setVisibleSamples(mapped);
+      }
+    } catch (e) {
+      console.error("Failed to list samples:", e);
+    }
+  };
+
+  React.useEffect(() => {
+    loadSamplesFromBackend();
+  }, []);
+
+  // Handler to open confirmation dialog
+  const handleFetchClick = () => {
+    setOpenConfirm(true);
+  };
+
+  // Handler to cancel confirmation dialog
+  const handleFetchCancel = () => {
+    setOpenConfirm(false);
+  };
+
+  // Handler to trigger backend download
+  const handleFetchConfirmed = async () => {
+    setOpenConfirm(false); // Close dialog
+    setIsFetchingSamples(true);
+    try {
+      // Trigger download
+      const res = await fetch(`${API_BASE_URL}/download-samples/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: 100 })
+      });
+      if (res.ok) {
+        // Refresh list
+        await loadSamplesFromBackend();
+      } else {
+        alert("Failed to download samples from backend.");
+      }
+    } catch (e) {
+      console.error("Download error:", e);
+      alert("Error triggering download.");
+    } finally {
+      setIsFetchingSamples(false);
+    }
+  };
+
+  // Map for compatibility with MCP tab (derived from visibleSamples)
+  const sampleDataFiles = visibleSamples.map(s => ({ path: s.path, name: s.name }));
 
   // Load available MCP tools on mount
   React.useEffect(() => {
@@ -156,7 +373,7 @@ function App() {
       setError('Please upload or select workflow and input files');
       return;
     }
-    
+
     // Validate file sizes (prevent empty files)
     if (workflowFile.size === 0) {
       setError('Workflow file is empty');
@@ -166,7 +383,7 @@ function App() {
       setError('Input file is empty');
       return;
     }
-    
+
     setLoading(true);
     setError(null);
     setResult(null);
@@ -197,6 +414,81 @@ function App() {
     }
   };
 
+  // Load Sample Handler
+  const handleLoadSample = async (sample) => {
+    console.log("Loading sample:", sample);
+
+    // 1. Reset State
+    setOcrError(null);
+    setOcrImage(null);
+    setOcrResult(null);
+
+    // 2. Set Preview Immediately (Direct URL)
+    setPreviewUrl(sample.url);
+
+    // 3. Try to Fetch Blob (Best Effort)
+    try {
+      setOcrLoading(true);
+      // 'cors' mode to try and get a blob
+      const res = await fetch(sample.url, { mode: 'cors' });
+      if (!res.ok) throw new Error(`Fetch status: ${res.status}`);
+
+      const blob = await res.blob();
+      const file = new File([blob], sample.name || 'sample.png', { type: blob.type });
+      setOcrImage(file);
+    } catch (e) {
+      console.log("Blob fetch failed (CORS), falling back to Server-Side fetch:", e);
+      // Do NOT set error. Leave ocrImage null. 
+      // The submit handler will detect (ocrImage is null, but previewUrl exists) and send URL.
+    } finally {
+      setOcrLoading(false);
+    }
+  };
+
+  const handleAnalyzeQuality = async () => {
+    if (!ocrImage && !previewUrl) return;
+    setQualityLoading(true);
+    setQualityResult(null);
+    try {
+      const imagePath = ocrImage?.path || previewUrl;
+      // If it's a blob URL (previewUrl but no path), we can't easily analyze on backend without upload.
+      // For this demo, we restrict to server samples or local paths that the backend can access?
+      // Wait, 'previewUrl' for server samples is a full URL. For uploads, it's a blob.
+      // Backend 'analyze-quality' expects 'image_path' relative to project root or absolute.
+      // If it's a download URL, we might need to handle it.
+      // Or strictly support samples for now as requested ("Check if images are OCR Worthy").
+
+      // Simplification: Only support samples for quality check initially, or we need an upload endpoint.
+      // Let's assume 'ocrImage.path' exists (Server Sample or Local File Path).
+      // If it is a blob upload, we might skip.
+
+      let pathToSend = ocrImage?.path;
+      if (!pathToSend && visibleSamples) {
+        // Find if previewUrl matches a sample
+        const match = visibleSamples.find(s => s.url === previewUrl);
+        if (match) pathToSend = match.path;
+      }
+
+      if (!pathToSend) {
+        alert("Quality analysis currently supports server samples only.");
+        setQualityLoading(false);
+        return;
+      }
+
+      const res = await fetch(`${API_BASE_URL}/analyze-quality`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image_path: pathToSend })
+      });
+      const data = await res.json();
+      setQualityResult(data);
+    } catch (e) {
+      console.error("Quality check failed", e);
+    } finally {
+      setQualityLoading(false);
+    }
+  };
+
   // OCR Handler
   const handleOcrSubmit = async (e) => {
     e.preventDefault();
@@ -205,13 +497,18 @@ function App() {
     setOcrResult(null);
     const formData = new FormData();
 
-    // Check if it's a sample file (has path property) or uploaded file
-    if (ocrImage && ocrImage.path) {
-      // Sample file - send file_path as form field
-      formData.append('file_path', ocrImage.path);
-    } else if (ocrImage) {
-      // Uploaded file
-      formData.append('image', ocrImage);
+    // Strategy 1: Uploaded File (or successfully fetched blob)
+    if (ocrImage) {
+      if (ocrImage.path) {
+        formData.append('file_path', ocrImage.path); // Local sample
+      } else {
+        formData.append('image', ocrImage); // Uploaded/Fetched blob
+      }
+    }
+    // Strategy 2: Server-Side Fetch (Fallback for CORS)
+    else if (previewUrl) {
+      console.log("Using Server-Side Fetch for URL:", previewUrl);
+      formData.append('file_path', previewUrl);
     } else {
       setOcrError('Please select an image file or choose a sample');
       setOcrLoading(false);
@@ -293,11 +590,11 @@ function App() {
 
       if (!response.ok) throw new Error('API error: ' + response.status);
       const data = await response.json();
-      
+
       // Build execution trace from response
       const executionTrace = [];
       let stepNum = 1;
-      
+
       // Add reasoning steps
       for (let i = 0; i < data.reasoning_steps.length; i++) {
         executionTrace.push({
@@ -311,7 +608,7 @@ function App() {
         });
         stepNum++;
       }
-      
+
       // Add tool calls
       for (const tool_call of data.tool_calls) {
         executionTrace.push({
@@ -325,7 +622,7 @@ function App() {
         });
         stepNum++;
       }
-      
+
       setAgentResult({
         ...data,
         execution_trace: executionTrace
@@ -437,75 +734,191 @@ function App() {
           {activeView === 'ocr' && (
             <Card sx={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)', borderRadius: 2, borderTop: '4px solid #667eea' }}>
               <CardContent>
-                <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#667eea' }}>📷 OCR Demonstration</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#667eea' }}>📷 OCR Demonstration</Typography>
+                  <Button size="small" variant="outlined" startIcon={<span>🏗️</span>} onClick={() => handleOpenArch('ocr')}>
+                    View Architecture
+                  </Button>
+                </Box>
+
+
+                <LearningBanner
+                  concept="API Wrapper Pattern"
+                  icon="🔌"
+                  codeRef="src/agentic_platform/tools/google_vision_ocr.py"
+                  description="This module demonstrates wrapping an external API (Google Vision) as a reusable Tool. The frontend uploads an image or URL, and the Backend API calls the `GoogleVisionOCR` class to return structured text."
+                />
+
                 <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>Extract text from images using Google Vision API</Typography>
 
+
+                {/* Quality Analysis Result */}
+                {qualityResult && (
+                  <Alert severity={qualityResult.score > 80 ? 'success' : qualityResult.score > 40 ? 'warning' : 'error'} sx={{ mt: 2, mb: 2 }}>
+                    <Typography variant="subtitle2" fontWeight={700}>
+                      OCR Suitability Score: {qualityResult.score}/100 - {qualityResult.verdict}
+                    </Typography>
+                    <ul style={{ margin: '5px 0', paddingLeft: '20px', fontSize: '0.85rem' }}>
+                      {qualityResult.reasoning.map((r, i) => <li key={i}>{r}</li>)}
+                    </ul>
+                  </Alert>
+                )}
+
                 <Box component="form" onSubmit={handleOcrSubmit} sx={{ display: 'grid', gap: 2 }}>
-                  <Box>
-                    <Button variant="contained" component="label" sx={{ mb: 1, width: '100%' }}>
-                      Upload Image for OCR
-                      <input type="file" accept="image/*" hidden onChange={e => setOcrImage(e.target.files[0])} />
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button type="submit" variant="contained" color="primary" disabled={ocrLoading || (!ocrImage && !previewUrl)} sx={{ flex: 1, fontWeight: 600, fontSize: '1rem', py: 1.2 }}>
+                      {ocrLoading ? <CircularProgress size={24} color="inherit" /> : 'Run OCR Extraction'}
                     </Button>
-                    {ocrImage && (
-                      <Typography variant="body2" sx={{ color: '#4caf50', fontWeight: 500 }}>
-                        ✓ Image: {ocrImage.name}
-                      </Typography>
-                    )}
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      onClick={handleAnalyzeQuality}
+                      disabled={(!ocrImage && !previewUrl) || qualityLoading}
+                      sx={{ minWidth: '150px' }}
+                      startIcon={qualityLoading ? <CircularProgress size={20} color="inherit" /> : <span>📊</span>}
+                    >
+                      Check Quality
+                    </Button>
                   </Box>
 
-                  {/* Sample Files for OCR */}
                   <Box>
-                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                      📝 Load Sample Image:
-                    </Typography>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
-                      {sampleDataFiles.map(file => (
+                    <Button variant="contained" component="label" sx={{ mb: 1, width: '100%' }}>
+                      Upload Image File
+                      <input type="file" accept="image/*" hidden onChange={e => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setOcrImage(file);
+                          setPreviewUrl(URL.createObjectURL(file));
+                        }
+                      }} />
+                    </Button>
+                  </Box>
+
+                  {/* Sample Files for OCR with Scroll & Preview */}
+                  <Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        📝 Select from Server Samples:
+                      </Typography>
+
+                      {/* Confirmation Dialog */}
+                      <Dialog
+                        open={openConfirm}
+                        onClose={handleFetchCancel}
+                      >
+                        <DialogTitle>{"Download 100 Samples?"}</DialogTitle>
+                        <DialogContent>
+                          <DialogContentText>
+                            This will download 100 images from the internet to the server.
+                            The process takes about 40-60 seconds and the UI will be blocked during this time.
+                          </DialogContentText>
+                        </DialogContent>
+                        <DialogActions>
+                          <Button onClick={handleFetchCancel}>Cancel</Button>
+                          <Button onClick={handleFetchConfirmed} autoFocus variant="contained" color="primary">
+                            Yes, Fetch
+                          </Button>
+                        </DialogActions>
+                      </Dialog>
+
+                      <Button
+                        variant="contained"
+                        color="secondary"
+                        size="medium"
+                        fullWidth
+                        onClick={handleFetchClick}
+                        disabled={isFetchingSamples}
+                        sx={{ fontSize: '0.9rem', textTransform: 'none', mb: 2, fontWeight: 'bold', border: '2px solid #667eea' }}
+                      >
+                        {isFetchingSamples ? <CircularProgress size={20} sx={{ mr: 1, color: 'white' }} /> : '⬇️ '}
+                        {isFetchingSamples ? 'Downloading 100 Samples...' : 'Fetch 100 Internet Samples (Click Me)'}
+                      </Button>
+                    </Box>
+
+                    {/* Scrollable Sample List */}
+                    <Box
+                      scrollable="true"
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                        gap: 1,
+                        maxHeight: '150px',
+                        overflowY: 'auto',
+                        border: '1px solid #eee',
+                        p: 1,
+                        borderRadius: 1,
+                        mb: 2
+                      }}
+                    >
+                      {visibleSamples.map(sample => (
                         <Button
-                          key={file.path}
+                          key={sample.id}
                           variant="outlined"
                           size="small"
-                          onClick={() => {
-                            // Fetch the sample image file from backend
-                            fetch(`${API_BASE_URL}/${file.path}`)
-                              .then(res => res.blob())
-                              .then(blob => {
-                                const imageFile = new File([blob], file.name, { type: blob.type });
-                                imageFile.path = file.path; // Preserve path for backend mock
-                                setOcrImage(imageFile);
-                              })
-                              .catch(err => {
-                                console.error(`Failed to load ${file.name}:`, err);
-                                setOcrError(`Failed to load ${file.name}`);
-                              });
-                          }}
+                          onClick={() => handleLoadSample(sample)}
                           sx={{
                             textTransform: 'none',
-                            fontSize: '0.85rem',
-                            py: 0.8,
+                            fontSize: '0.75rem',
+                            py: 0.5,
                             justifyContent: 'flex-start',
                             color: '#667eea',
                             borderColor: '#667eea',
-                            backgroundColor: ocrImage?.name === file.name ? '#e3f2fd' : 'transparent',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            backgroundColor: previewUrl === sample.url ? '#e3f2fd' : 'transparent',
                             '&:hover': {
                               backgroundColor: '#e3f2fd',
                               borderColor: '#667eea'
                             }
                           }}
                         >
-                          {ocrImage?.name === file.name ? '✓ ' : ''}📄 {file.name}
+                          {sample.type === 'external' ? '🌐 ' : '📄 '}
+                          {sample.displayName || sample.name}
                         </Button>
                       ))}
                     </Box>
-                  </Box>
 
-                  <Button type="submit" variant="contained" color="primary" disabled={ocrLoading || !ocrImage} sx={{ fontWeight: 600, fontSize: '1rem', py: 1.2 }}>
-                    {ocrLoading ? <CircularProgress size={24} color="inherit" /> : 'Run OCR'}
-                  </Button>
+                    {/* Image Preview Pane */}
+                    {previewUrl && (
+                      <Box sx={{ mt: 2, mb: 2, textAlign: 'center', border: '1px dashed #ccc', borderRadius: 2, p: 2, bgcolor: '#f9f9f9' }}>
+                        <Typography variant="caption" color="textSecondary" gutterBottom>
+                          Preview (Click 'Run OCR' to process)
+                        </Typography>
+                        <Box sx={{ mt: 1, mb: 1, maxHeight: '200px', overflow: 'hidden', display: 'flex', justifyContent: 'center' }}>
+                          <img src={previewUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', objectFit: 'contain' }} />
+                        </Box>
+                        <Typography variant="caption" sx={{ display: 'block', wordBreak: 'break-all', fontSize: '0.7rem', color: '#888' }}>
+                          Source: {previewUrl}
+                        </Typography>
+
+                        {/* Status Indicator */}
+                        {!ocrImage && !ocrLoading && (
+                          <Typography variant="caption" sx={{ display: 'block', mt: 1, color: '#2e7d32', fontWeight: 600 }}>
+                            ✅ Ready (Server-side fetch mode)
+                          </Typography>
+                        )}
+                        {ocrImage && (
+                          <Typography variant="caption" sx={{ display: 'block', mt: 1, color: '#1976d2', fontWeight: 600 }}>
+                            ✅ Ready (Direct Upload mode)
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
+
+                  </Box>
                 </Box>
                 {ocrError && <Alert severity="error" sx={{ mt: 2 }}>{ocrError}</Alert>}
                 {ocrResult && (
                   <Box sx={{ mt: 3 }}>
-                    <Typography variant="h6" fontWeight={600}>OCR Result</Typography>
+                    <Typography variant="h6" fontWeight={600}>
+                      OCR Result
+                      {ocrResult.confidence > 0 && (
+                        <span style={{ fontSize: '0.8em', color: '#4caf50', marginLeft: '10px' }}>
+                          (Confidence: {(ocrResult.confidence * 100).toFixed(0)}%)
+                        </span>
+                      )}
+                    </Typography>
                     <Box sx={{ background: '#f6f8fa', borderRadius: 2, p: 2, fontSize: '1rem', overflowX: 'auto', whiteSpace: 'pre-line', maxHeight: '400px', overflowY: 'auto' }}>
                       {ocrResult.formatted_text_lines && ocrResult.formatted_text_lines.length > 0 ? (
                         ocrResult.formatted_text_lines.map((line, idx) => (
@@ -531,7 +944,21 @@ function App() {
           {activeView === 'mcp' && (
             <Card sx={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)', borderRadius: 2, borderTop: '4px solid #764ba2' }}>
               <CardContent>
-                <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#764ba2' }}>🔧 MCP Tool Tester</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#764ba2' }}>🔧 MCP Tool Tester</Typography>
+                  <Button size="small" variant="outlined" startIcon={<span>🏗️</span>} onClick={() => handleOpenArch('mcp')}>
+                    View Architecture
+                  </Button>
+                </Box>
+
+
+                <LearningBanner
+                  concept="Model Context Protocol (MCP)"
+                  icon="🛠️"
+                  codeRef="src/agentic_platform/tools/tool_registry.py"
+                  description="MCP standardizes how AI models interact with server-side tools. This demo also showcases RAG (Retrieval Augmented Generation) where the 'search_knowledge_base' tool retrieves documents to ground the model's response."
+                />
+
                 <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>Call any MCP-registered tool directly with JSON-RPC 2.0</Typography>
 
                 <Box component="form" onSubmit={handleMcpCall} sx={{ display: 'grid', gap: 2 }}>
@@ -551,8 +978,19 @@ function App() {
 
                   {mcpToolName === 'google_vision_ocr' && (
                     <Box>
-                      <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>Sample Images:</Typography>
-                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1, mt: 2 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>Sample Images (Shared with OCR):</Typography>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={handleFetchClick}
+                          disabled={isFetchingSamples}
+                          sx={{ fontSize: '0.7rem', textTransform: 'none' }}
+                        >
+                          ⬇️ Fetch 100 Samples
+                        </Button>
+                      </Box>
+                      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, maxHeight: '200px', overflowY: 'auto', border: '1px solid #eee', p: 1, borderRadius: 1 }}>
                         {sampleDataFiles.map(file => (
                           <Button
                             key={file.path}
@@ -563,6 +1001,23 @@ function App() {
                             {file.name}
                           </Button>
                         ))}
+                      </Box>
+                    </Box>
+                  )}
+
+                  {mcpToolName === 'search_knowledge_base' && (
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 500, mb: 1, mt: 2 }}>Quick Search Queries:</Typography>
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Button variant="outlined" size="small" onClick={() => setMcpArgs(JSON.stringify({ query: 'neural network' }))}>
+                          🧠 Neural Network
+                        </Button>
+                        <Button variant="outlined" size="small" onClick={() => setMcpArgs(JSON.stringify({ query: 'transformer' }))}>
+                          🤖 Transformer
+                        </Button>
+                        <Button variant="outlined" size="small" onClick={() => setMcpArgs(JSON.stringify({ query: 'langgraph' }))}>
+                          🕸️ LangGraph
+                        </Button>
                       </Box>
                     </Box>
                   )}
@@ -584,7 +1039,19 @@ function App() {
                 {mcpResult && (
                   <Box sx={{ mt: 3 }}>
                     <Typography variant="h6" fontWeight={600}>Tool Result</Typography>
+
+                    {/* Smart Parsing for MCP Content */}
+                    {mcpResult.result && mcpResult.result.content && Array.isArray(mcpResult.result.content) && mcpResult.result.content.length > 0 ? (
+                      <Box sx={{ background: '#e8f5e9', borderRadius: 2, p: 2, mb: 2, borderLeft: '5px solid #4caf50' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2e7d32', mb: 1 }}>✅ Parsed Output</Typography>
+                        <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                          {mcpResult.result.content[0].text}
+                        </Typography>
+                      </Box>
+                    ) : null}
+
                     <Box sx={{ background: '#f6f8fa', borderRadius: 2, p: 2, fontSize: '0.85rem', fontFamily: 'monospace', overflowX: 'auto', maxHeight: '400px', overflowY: 'auto' }}>
+                      <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#999' }}>Raw JSON-RPC Response:</Typography>
                       {JSON.stringify(mcpResult, null, 2)}
                     </Box>
                   </Box>
@@ -596,10 +1063,48 @@ function App() {
           {activeView === 'workflow' && (
             <Card sx={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)', borderRadius: 2, borderTop: '4px solid #43e97b' }}>
               <CardContent>
-                <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#43e97b' }}>⚙️ Run Workflow</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#43e97b' }}>⚙️ Run Workflow</Typography>
+                  <Button size="small" variant="outlined" startIcon={<span>🏗️</span>} onClick={() => handleOpenArch('workflow')}>
+                    View Architecture
+                  </Button>
+                </Box>
+
+                <LearningBanner
+                  concept="Deterministic State Machine"
+                  icon="⚡"
+                  codeRef="demo_workflow.yaml"
+                  description="Unlike an Agent, a Workflow follows a pre-defined path defined in `demo_workflow.yaml`. We use `LangGraph` to compile a state machine from this YAML conf, ensuring deterministic execution of steps. The 'Input' is a JSON payload injection."
+                />
+
+
+
                 <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>Upload workflow YAML and input JSON to execute</Typography>
 
                 <Box component="form" onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2 }}>
+
+                  {/* Workflow Examples */}
+                  <Box sx={{ mb: 1, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                    <Typography variant="caption" sx={{ fontWeight: 600, mb: 1, display: 'block', color: '#666' }}>🚀 Quick Start: Load Example Workflow</Typography>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                      {Object.keys(WORKFLOW_EXAMPLES).map(key => (
+                        <Button
+                          key={key}
+                          variant="outlined"
+                          size="small"
+                          onClick={() => {
+                            const blob = new Blob([WORKFLOW_EXAMPLES[key]], { type: 'text/yaml' });
+                            const file = new File([blob], `${key}_workflow.yaml`, { type: 'text/yaml' });
+                            setWorkflowFile(file);
+                          }}
+                          sx={{ textTransform: 'none', bgcolor: 'white' }}
+                        >
+                          {key.charAt(0).toUpperCase() + key.slice(1)} Flow
+                        </Button>
+                      ))}
+                    </Box>
+                  </Box>
+
                   <Box>
                     <Button variant="contained" component="label" sx={{ mb: 1, width: '100%' }}>
                       Upload Workflow YAML
@@ -747,10 +1252,43 @@ function App() {
           {activeView === 'agent' && (
             <Card sx={{ background: '#ffffff', boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)', borderRadius: 2, borderTop: '4px solid #ff6b6b' }}>
               <CardContent>
-                <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#ff6b6b' }}>🤖 LangGraph Agent Reasoning</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="h5" fontWeight={700} gutterBottom sx={{ color: '#ff6b6b' }}>🤖 LangGraph Agent Reasoning</Typography>
+                  <Button size="small" variant="outlined" startIcon={<span>🏗️</span>} onClick={() => handleOpenArch('agent')}>
+                    View Architecture
+                  </Button>
+                </Box>
+
+                <LearningBanner
+                  concept="ReAct Loop (Reason + Act)"
+                  icon="🧠"
+                  codeRef="src/agentic_platform/agent.py"
+                  description="This is an Autonomous Agent. It uses a Large Language Model (LLM) to **Reason** about your task, decide which **Tool** to call, execute it, and observe the result."
+                />
+
+
+
                 <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>Watch the agent reason, route decisions, and execute tools in real-time</Typography>
 
-                <Box component="form" onSubmit={handleAgentSubmit} sx={{ display: 'grid', gap: 2 }}>
+                <Box component="form" onSubmit={handleAgentSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+
+                  <Box>
+                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>Quick Prompts:</Typography>
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                      {AGENT_PROMPTS.map((p, i) => (
+                        <Button
+                          key={i}
+                          variant="outlined"
+                          size="small"
+                          onClick={() => setAgentPrompt(p)}
+                          sx={{ textTransform: 'none', fontSize: '0.75rem' }}
+                        >
+                          {p.length > 20 ? p.substring(0, 20) + '...' : p}
+                        </Button>
+                      ))}
+                    </Box>
+                  </Box>
+
                   <TextField
                     label="Prompt"
                     multiline
@@ -775,10 +1313,10 @@ function App() {
                     </Select>
                   </FormControl>
 
-                  <Button 
-                    type="submit" 
-                    variant="contained" 
-                    color="primary" 
+                  <Button
+                    type="submit"
+                    variant="contained"
+                    color="primary"
                     disabled={agentLoading}
                     sx={{ fontWeight: 600, fontSize: '1rem', py: 1.2, backgroundColor: '#ff6b6b', '&:hover': { backgroundColor: '#ff5252' } }}
                   >
@@ -791,7 +1329,7 @@ function App() {
                 {agentResult && (
                   <Box sx={{ mt: 3 }}>
                     {/* Status Bar */}
-                    <Box sx={{ 
+                    <Box sx={{
                       background: agentResult.status === 'success' ? '#e8f5e9' : '#fff3e0',
                       borderLeft: `4px solid ${agentResult.status === 'success' ? '#4caf50' : '#ff9800'}`,
                       p: 2,
@@ -808,7 +1346,7 @@ function App() {
 
                     {/* Execution Steps Timeline */}
                     <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>⏱️ Execution Timeline</Typography>
-                    <Box sx={{ 
+                    <Box sx={{
                       border: '1px solid #e0e0e0',
                       borderRadius: 1,
                       overflow: 'hidden',
@@ -820,22 +1358,23 @@ function App() {
                             <Box
                               onClick={() => setExpandedStep(expandedStep === idx ? null : idx)}
                               sx={{
-                                background: step.node_type === 'agent' ? '#f5f5f5' : step.node_type === 'tool' ? '#fff9e6' : '#e8f5e9',
+                                background: step.node_type === 'agent' ? '#e3f2fd' : step.node_type === 'tool' ? '#fff3e0' : '#f3e5f5',
                                 p: 2,
                                 borderBottom: '1px solid #e0e0e0',
+                                borderLeft: `4px solid ${step.node_type === 'agent' ? '#2196f3' : step.node_type === 'tool' ? '#ff9800' : '#9c27b0'}`,
                                 cursor: 'pointer',
-                                '&:hover': { background: step.node_type === 'agent' ? '#eeeeee' : step.node_type === 'tool' ? '#fff8d6' : '#e0f2f1' },
+                                '&:hover': { background: step.node_type === 'agent' ? '#bbdefb' : step.node_type === 'tool' ? '#ffe0b2' : '#e1bee7' },
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between'
                               }}
                             >
                               <Box sx={{ flex: 1 }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: step.node_type === 'agent' ? '#1565c0' : step.node_type === 'tool' ? '#e65100' : '#4a148c' }}>
                                   Step {step.step_number}: {
                                     step.node_type === 'agent' ? '🧠 Agent Reasoning' :
-                                    step.node_type === 'tool' ? '🔧 Tool Execution' :
-                                    '🚦 Router Decision'
+                                      step.node_type === 'tool' ? '🛠️ Tool Execution' :
+                                        '🚦 Router Decision'
                                   }
                                 </Typography>
                                 <Typography variant="body2" color="textSecondary">{step.message}</Typography>
@@ -910,6 +1449,23 @@ function App() {
             </Card>
           )}
         </Container>
+        {/* Architecture Diagram Modal */}
+        <Dialog
+          open={archModalOpen}
+          onClose={() => setArchModalOpen(false)}
+          maxWidth="md"
+          fullWidth
+        >
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <span>🏗️</span> System Architecture
+          </DialogTitle>
+          <DialogContent dividers>
+            {currentDiagram && <MermaidDiagram chart={currentDiagram} />}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setArchModalOpen(false)}>Close</Button>
+          </DialogActions>
+        </Dialog>
       </div>
     </div>
   );

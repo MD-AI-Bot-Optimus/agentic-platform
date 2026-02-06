@@ -13,6 +13,10 @@ export default defineConfig({
       '/sample_data': 'http://localhost:8003',
       '/demo_workflow.yaml': 'http://localhost:8003',
       '/demo_input.json': 'http://localhost:8003',
+      '/download-samples': 'http://localhost:8003',
+      '/list-samples': 'http://localhost:8003',
+      '/agent': 'http://localhost:8003',
+      '/analyze-quality': 'http://localhost:8003',
     },
   },
 });

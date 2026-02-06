@@ -26,6 +26,7 @@ class ToolRegistry:
     def __init__(self):
         self._tools: Dict[str, ToolSpec] = {}
         self._register_builtin_tools()
+        self._register_mock_tools()
 
     def _register_builtin_tools(self):
         # Example: Register Google Vision OCR tool
@@ -45,6 +46,35 @@ class ToolRegistry:
             ocr_schema,
             google_vision_ocr_handler,
             description="Extract text from images using Google Cloud Vision API"
+        )
+
+    def _register_mock_tools(self):
+        """Register mock tools for testing agent flows."""
+        # 1. Search Knowledge Base Tool
+        search_schema = {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "The search query."}
+            },
+            "required": ["query"]
+        }
+        
+        def search_handler(args):
+            query = args.get("query", "").lower()
+            if "neural network" in query:
+                return "Found 5 articles: 'Neural Networks 101', 'Deep Learning Basics', 'Backpropagation Explained'. Summary: Neural networks are computing systems inspired by biological brains..."
+            elif "transformer" in query:
+                return "Found 3 articles: 'Attention Is All You Need', 'BERT Architecture', 'GPT Models'. Summary: Transformers use self-attention to process sequential data in parallel..."
+            elif "langgraph" in query:
+                return "Found documentation: LangGraph is a library for building stateful, multi-agent applications with LLMs..."
+            else:
+                return f"Found 2 general articles about '{query}'. They discuss basic concepts and history."
+                
+        self.register_tool(
+            "search_knowledge_base",
+            search_schema,
+            search_handler,
+            description="Search the internal knowledge base for AI topics."
         )
 
     def register_tool(
