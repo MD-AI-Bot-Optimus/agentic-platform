@@ -3,6 +3,7 @@ from functools import lru_cache
 from .knowledge_base import KnowledgeBaseProvider, MockKnowledgeBase, EnterpriseKnowledgeBase
 from .ocr import OCRProvider, MockOCR, GoogleCloudVisionOCR
 from ..core.tenancy import TenantRegistry, get_current_tenant_id
+from ..core.trace import add_trace_step
 
 @lru_cache()
 def get_knowledge_base_provider(tenant_id: str = None) -> KnowledgeBaseProvider:
@@ -14,6 +15,7 @@ def get_knowledge_base_provider(tenant_id: str = None) -> KnowledgeBaseProvider:
     provider_type = config.kb_provider
     
     print(f"[Factory] Resolving KB for tenant '{tenant_id}' -> {provider_type}")
+    add_trace_step("Factory", f"Resolving KB Provider", f"Tenant: {tenant_id}, Type: {provider_type}")
     
     if provider_type == "enterprise":
         # Pass tenant-specific connection details here in a real app
@@ -30,6 +32,7 @@ def get_ocr_provider(tenant_id: str = None, credentials_json: str = None) -> OCR
     provider_type = config.ocr_provider
 
     print(f"[Factory] Resolving OCR for tenant '{tenant_id}' -> {provider_type}")
+    add_trace_step("Factory", f"Resolving OCR Provider", f"Tenant: {tenant_id}, Type: {provider_type}")
     
     if provider_type == "mock":
         return MockOCR()

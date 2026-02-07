@@ -1,44 +1,333 @@
 INFO:     Will watch for changes in these directories: ['/Users/manishdube/Documents/src/agentic-platform']
 INFO:     Uvicorn running on http://0.0.0.0:8003 (Press CTRL+C to quit)
-INFO:     Started reloader process [7539] using WatchFiles
-INFO:     Started server process [7624]
+INFO:     Started reloader process [33790] using WatchFiles
+INFO:     Started server process [33862]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
-INFO:     127.0.0.1:65064 - "POST /download-samples/ HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65092 - "GET /list-samples/?t=1770413359723 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65093 - "GET /mcp/tools HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65095 - "GET /mcp/tools HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65098 - "GET /list-samples/?t=1770413359723 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65101 - "POST /mcp/request HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65104 - "POST /mcp/request HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65107 - "POST /mcp/request HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62116 - "POST /agent/execute HTTP/1.1" 422 Unprocessable Entity
+INFO:     127.0.0.1:62122 - "POST /agent/execute HTTP/1.1" 422 Unprocessable Entity
+/Users/manishdube/Documents/src/agentic-platform/src/agentic_platform/llm/__init__.py:202: LangChainDeprecationWarning: The class `ChatVertexAI` was deprecated in LangChain 3.2.0 and will be removed in 4.0.0. An updated version of the class exists in the `langchain-google-genai package and should be used instead. To use it run `pip install -U `langchain-google-genai` and import as `from `langchain_google_genai import ChatGoogleGenerativeAI``.
+  return ChatVertexAI(
+Agent node error: File path/to/credentials.json was not found.
+INFO:     127.0.0.1:62126 - "POST /agent/execute HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62149 - "GET /list-samples/?t=1770485300049 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62150 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62153 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62155 - "GET /list-samples/?t=1770485300049 HTTP/1.1" 200 OK
+Agent node error: File path/to/credentials.json was not found.
+INFO:     127.0.0.1:62159 - "POST /agent/execute HTTP/1.1" 200 OK
+Agent node error: File path/to/credentials.json was not found.
+INFO:     127.0.0.1:62163 - "POST /agent/execute HTTP/1.1" 200 OK
+Agent node error: File path/to/credentials.json was not found.
+INFO:     127.0.0.1:62167 - "POST /agent/execute HTTP/1.1" 200 OK
+Agent node error: File path/to/credentials.json was not found.
+INFO:     127.0.0.1:62174 - "POST /agent/execute HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/agentic_platform/llm/__init__.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [33862]
+INFO:     Started server process [34642]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:62482 - "GET /list-samples/?t=1770487471929 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62484 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62487 - "GET /list-samples/?t=1770487471929 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62489 - "GET /mcp/tools HTTP/1.1" 200 OK
+Agent node error: Error calling model 'gemini-1.5-pro' (NOT_FOUND): 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-pro is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}
+INFO:     127.0.0.1:62492 - "POST /agent/execute HTTP/1.1" 200 OK
+Agent node error: Error calling model 'gemini-1.5-flash' (NOT_FOUND): 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-flash is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}
+INFO:     127.0.0.1:62496 - "POST /agent/execute HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'scripts/list_google_models.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [34642]
+INFO:     Started server process [34976]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:62552 - "GET /list-samples/?t=1770487583236 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62554 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62575 - "GET /list-samples/?t=1770487690927 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62577 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62578 - "GET /list-samples/?t=1770487690928 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62581 - "GET /mcp/tools HTTP/1.1" 200 OK
+Agent node error: Error calling model 'gemini-2.0-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.0-flash\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.0-flash\nPlease retry in 6.120634711s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.0-flash'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '6s'}]}}
+INFO:     127.0.0.1:62584 - "POST /agent/execute HTTP/1.1" 200 OK
+Model gemini-pro-latest not found, using default
+Agent node error: Error calling model 'gemini-1.5-pro' (NOT_FOUND): 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-pro is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}
+INFO:     127.0.0.1:62605 - "POST /agent/execute HTTP/1.1" 200 OK
+Model gemini-pro-latest not found, using default
+Agent node error: Error calling model 'gemini-1.5-pro' (NOT_FOUND): 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-pro is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}
+INFO:     127.0.0.1:62617 - "POST /agent/execute HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62625 - "GET /list-samples/?t=1770487831384 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62626 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62630 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62632 - "GET /list-samples/?t=1770487831384 HTTP/1.1" 200 OK
+Model gemini-pro-latest not found, using default
+Agent node error: Error calling model 'gemini-1.5-pro' (NOT_FOUND): 404 NOT_FOUND. {'error': {'code': 404, 'message': 'models/gemini-1.5-pro is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.', 'status': 'NOT_FOUND'}}
+INFO:     127.0.0.1:62635 - "POST /agent/execute HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/agentic_platform/llm/__init__.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [34976]
+INFO:     Started server process [36039]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:62669 - "GET /list-samples/?t=1770487928613 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62670 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62671 - "GET /list-samples/?t=1770487928614 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62674 - "GET /mcp/tools HTTP/1.1" 200 OK
+Agent node error: Error calling model 'gemini-pro-latest' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.5-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.5-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-2.5-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-2.5-pro\nPlease retry in 8.180541624s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'model': 'gemini-2.5-pro', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-pro'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-pro'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerDay-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-pro'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '8s'}]}}
+INFO:     127.0.0.1:62678 - "POST /agent/execute HTTP/1.1" 200 OK
+[Factory] Resolving OCR for tenant 'default' -> google
+INFO:     127.0.0.1:62698 - "POST /mcp/call-tool HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/agentic_platform/llm/__init__.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36039]
+INFO:     Started server process [36095]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:62712 - "GET /list-samples/?t=1770488043025 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62713 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62729 - "GET /list-samples/?t=1770488074725 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62730 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62734 - "GET /list-samples/?t=1770488074725 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62735 - "GET /mcp/tools HTTP/1.1" 200 OK
+Agent node error: Error calling model 'gemini-3-pro-preview' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-3-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-3-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-3-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-3-pro\nPlease retry in 39.195385402s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-pro'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-pro'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-pro'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerDay-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-pro'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '39s'}]}}
+INFO:     127.0.0.1:62738 - "POST /agent/execute HTTP/1.1" 200 OK
+Agent node error: Error calling model 'gemini-3-pro-preview' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-3-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-3-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-3-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-3-pro\nPlease retry in 26.096944396s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerDay-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-pro'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-pro'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-3-pro', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-3-pro', 'location': 'global'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '26s'}]}}
+INFO:     127.0.0.1:62759 - "POST /agent/execute HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62770 - "POST /agent/execute HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62785 - "GET /list-samples/?t=1770488232878 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62786 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62787 - "GET /list-samples/?t=1770488232879 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62790 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62795 - "POST /agent/execute HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/agentic_platform/llm/__init__.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36095]
+INFO:     Started server process [36669]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/agentic_platform/adapters/langgraph_agent.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36669]
+INFO:     Started server process [36705]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/agentic_platform/adapters/langgraph_agent.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36705]
+INFO:     Started server process [36711]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/agentic_platform/adapters/langgraph_agent.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36711]
+INFO:     Started server process [36716]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:62837 - "GET /list-samples/?t=1770488457758 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62839 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62849 - "GET /list-samples/?t=1770488468065 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62851 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62870 - "GET /list-samples/?t=1770488574299 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62871 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62874 - "GET /list-samples/?t=1770488574299 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62876 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62881 - "POST /agent/execute HTTP/1.1" 200 OK
+Detected tool use: weather_api args={'city': "'Los Angeles'"}
+Tool execution error: Tool not found: weather_api
+DEBUG: Detected tool use: weather_api args={'city': "'Los Angeles'"}
+INFO:     127.0.0.1:62896 - "POST /agent/execute HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62929 - "GET /sample_data/downloaded/sample_7.jpg HTTP/1.1" 200 OK
+[Factory] Resolving OCR for tenant 'default' -> google
+INFO:     127.0.0.1:62934 - "POST /run-ocr/ HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/agentic_platform/api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36716]
+INFO:     Started server process [36832]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:62952 - "GET /list-samples/?t=1770488884619 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62954 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62958 - "GET /list-samples/?t=1770488884619 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62960 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62965 - "GET /list-samples/?t=1770488886617 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62966 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62970 - "GET /list-samples/?t=1770488888677 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62972 - "GET /mcp/tools HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/agentic_platform/api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36832]
+INFO:     Started server process [36872]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:62998 - "GET /list-samples/?t=1770488965304 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62999 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63005 - "GET /list-samples/?t=1770488967289 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63007 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63061 - "GET /list-samples/?t=1770489307373 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63062 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63063 - "GET /list-samples/?t=1770489307374 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63066 - "GET /mcp/tools HTTP/1.1" 200 OK
+Agent node error: Error calling model 'gemini-3-pro-preview' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-3-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_input_token_count, limit: 0, model: gemini-3-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-3-pro\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 0, model: gemini-3-pro\nPlease retry in 7.1482442s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerDay-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-pro'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_input_token_count', 'quotaId': 'GenerateContentInputTokensPerModelPerMinute-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-pro'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-3-pro', 'location': 'global'}}, {'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3-pro'}}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '7s'}]}}
+INFO:     127.0.0.1:63069 - "POST /agent/execute HTTP/1.1" 200 OK
+Invalid provider or model: Model gemini-2.0-flash not available for provider google
+INFO:     127.0.0.1:63074 - "GET /mcp/health-check HTTP/1.1" 200 OK
+Invalid provider or model: Model gemini-2.0-flash not available for provider google
+INFO:     127.0.0.1:63135 - "GET /list-samples/?t=1770489551251 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63138 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63139 - "GET /list-samples/?t=1770489551252 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63145 - "GET /mcp/tools HTTP/1.1" 200 OK
+Invalid provider or model: Model gemini-2.0-flash not available for provider google
+INFO:     127.0.0.1:63131 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63159 - "GET /mcp/health-check HTTP/1.1" 200 OK
+Invalid provider or model: Model gemini-2.0-flash not available for provider google
+INFO:     127.0.0.1:63191 - "GET /list-samples/?t=1770489671029 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63192 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63193 - "GET /list-samples/?t=1770489671030 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63199 - "GET /mcp/tools HTTP/1.1" 200 OK
+Invalid provider or model: Model gemini-2.0-flash not available for provider google
+INFO:     127.0.0.1:63187 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63209 - "GET /mcp/health-check HTTP/1.1" 200 OK
+Detected tool use: datetime args={}
+Tool execution error: Tool not found: datetime
+DEBUG: Detected tool use: datetime args={}
+INFO:     127.0.0.1:63231 - "POST /agent/execute HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/agentic_platform/llm/__init__.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [36872]
+INFO:     Started server process [37038]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/agentic_platform/tools/tool_registry.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [37038]
+INFO:     Started server process [37221]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+WARNING:  WatchFiles detected changes in 'src/agentic_platform/tools/tool_registry.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [37221]
+INFO:     Started server process [37367]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:63692 - "GET /list-samples/?t=1770490580169 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63693 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63694 - "GET /list-samples/?t=1770490580170 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63697 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63688 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63717 - "GET /mcp/health-check HTTP/1.1" 200 OK
+Detected tool use: get_stock_price args={'symbol': "'AAPL'"}
+Tool execution error: Tool not found: get_stock_price
+Agent node error: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 57.522433711s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '57s'}]}}
+DEBUG: Detected tool use: get_stock_price args={'symbol': "'AAPL'"}
+INFO:     127.0.0.1:63744 - "POST /agent/execute HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/agentic_platform/tools/tool_registry.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [37367]
+INFO:     Started server process [37512]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:63797 - "GET /list-samples/?t=1770490851530 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63799 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63804 - "GET /list-samples/?t=1770490852955 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63806 - "GET /list-samples/?t=1770490852956 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63809 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63819 - "GET /mcp/tools HTTP/1.1" 200 OK
+WARNING:  WatchFiles detected changes in 'src/agentic_platform/api.py'. Reloading...
+INFO:     Shutting down
+INFO:     Waiting for connections to close. (CTRL+C to force quit)
+INFO:     127.0.0.1:63795 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63837 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63839 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [37512]
+INFO:     Started server process [37580]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:64051 - "GET /list-samples/?t=1770491039676 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64052 - "GET /list-samples/?t=1770491039677 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64053 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64055 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64083 - "GET /list-samples/?t=1770491049482 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64084 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64086 - "GET /list-samples/?t=1770491049484 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64089 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64110 - "GET /list-samples/?t=1770491104649 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64112 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64117 - "GET /list-samples/?t=1770491104649 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64118 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64107 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64160 - "GET /list-samples/?t=1770491152230 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64161 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64172 - "GET /list-samples/?t=1770491152230 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64173 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64190 - "GET /list-samples/?t=1770491166395 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64191 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64193 - "GET /list-samples/?t=1770491166395 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64203 - "GET /mcp/tools HTTP/1.1" 200 OK
+[Factory] Resolving OCR for tenant 'default' -> google
+INFO:     127.0.0.1:64212 - "POST /mcp/call-tool HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64187 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64224 - "GET /mcp/health-check HTTP/1.1" 200 OK
 [Factory] Resolving KB for tenant 'default' -> mock
-INFO:     127.0.0.1:65113 - "POST /mcp/request HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65117 - "POST /mcp/request HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65120 - "POST /mcp/request HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65124 - "POST /mcp/request HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65127 - "POST /mcp/request HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65130 - "POST /mcp/request HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65136 - "POST /mcp/request HTTP/1.1" 200 OK
-[Factory] Resolving OCR for tenant 'default' -> mock
-INFO:     127.0.0.1:65140 - "POST /run-workflow/ HTTP/1.1" 200 OK
-API key not configured for anthropic
-API key not configured for openai
-API key not configured for google
-Detected tool use: search_knowledge_base args={'query': 'What is artificial intelligence?'}
-DEBUG: Detected tool use: search_knowledge_base args={'query': 'What is artificial intelligence?'}
-INFO:     127.0.0.1:65143 - "POST /agent/execute HTTP/1.1" 200 OK
-API key not configured for anthropic
-API key not configured for openai
-API key not configured for google
-Detected tool use: search_knowledge_base args={'query': 'What is the capital of France?'}
-DEBUG: Detected tool use: search_knowledge_base args={'query': 'What is the capital of France?'}
-INFO:     127.0.0.1:65152 - "POST /agent/execute HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65196 - "GET /list-samples/?t=1770413745218 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65197 - "GET /mcp/tools HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65201 - "GET /mcp/tools HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65203 - "GET /list-samples/?t=1770413745218 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65283 - "GET /list-samples/?t=1770413933827 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65284 - "GET /mcp/tools HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65286 - "GET /list-samples/?t=1770413933828 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:65289 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64290 - "POST /mcp/request HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64356 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64418 - "GET /list-samples/?t=1770491691664 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64420 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64416 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64458 - "GET /list-samples/?t=1770491748751 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64459 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64461 - "GET /list-samples/?t=1770491748752 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64471 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64454 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64483 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64535 - "GET /list-samples/?t=1770491832899 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64536 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64540 - "GET /list-samples/?t=1770491832899 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64541 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64532 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64559 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64689 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64690 - "GET /list-samples/?t=1770491925381 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64685 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64725 - "GET /list-samples/?t=1770492000142 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64727 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64728 - "GET /list-samples/?t=1770492000143 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64734 - "GET /mcp/tools HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64721 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64749 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65047 - "GET /mcp/health-check HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65073 - "GET /demo_input.json HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65076 - "GET /demo_workflow.yaml HTTP/1.1" 200 OK
+[Factory] Resolving OCR for tenant 'default' -> google
+INFO:     127.0.0.1:65079 - "POST /run-workflow/ HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65090 - "GET /sample_data/downloaded/sample_1.jpg HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65094 - "POST /run-ocr/ HTTP/1.1" 200 OK

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Container, Typography, Button, Card, CardContent, Box, Alert, CircularProgress, FormControl, InputLabel, Select, MenuItem, TextField, Grid, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+import { Container, Typography, Button, Card, CardContent, Box, Alert, CircularProgress, FormControl, InputLabel, Select, MenuItem, TextField, Grid, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Tabs, Tab, Accordion, AccordionSummary, AccordionDetails, List, ListItem, ListItemIcon, ListItemText, Paper, Chip, Divider, Tooltip } from '@mui/material';
+import { ExpandMore, CheckCircle, Error as ErrorIcon, PlayCircle, Schedule, Description, Code as CodeIcon, Lightbulb as LightbulbIcon, Storage as StorageIcon, Build as BuildIcon, Groups as GroupsIcon, AutoFixHigh as AutoFixHighIcon, CheckCircle as CheckCircleIcon, NetworkCheck as NetworkCheckIcon } from '@mui/icons-material';
 import MermaidDiagram from './components/MermaidDiagram';
 
 // Architecture Diagrams
@@ -17,6 +18,26 @@ const RAG_SAMPLES = [
   "How does the Google Vision API work?",
   "What are the benefits of LangGraph?"
 ];
+
+// Example Inputs
+const WORKFLOW_INPUTS = {
+  simple: JSON.stringify({
+    text: "This is a sample text to summarize.",
+    mode: "concise"
+  }, null, 2),
+  parallel: JSON.stringify({
+    data: "chunk1,chunk2,chunk3,chunk4",
+    processors: 2
+  }, null, 2),
+  conditional: JSON.stringify({
+    user_type: "premium",
+    query: "Advanced analysis request"
+  }, null, 2),
+  rag_flow: JSON.stringify({
+    topic: "History of AI",
+    depth: "detailed"
+  }, null, 2)
+};
 
 // Workflow Examples
 const WORKFLOW_EXAMPLES = {
@@ -83,6 +104,66 @@ edges:
   - from: branch_b
     to: merge
   - from: merge
+    to: end
+`,
+  conditional: `name: Conditional Logic
+nodes:
+  - id: start
+    type: start
+  - id: check_user
+    type: tool
+    tool: validate_user
+    args:
+      user: context.input.user_type
+  - id: premium_path
+    type: tool
+    tool: advanced_analysis
+    args:
+      query: context.input.query
+  - id: standard_path
+    type: tool
+    tool: basic_response
+    args:
+      query: context.input.query
+  - id: end
+    type: end
+edges:
+  - from: start
+    to: check_user
+  - from: check_user
+    to: premium_path
+    condition: "input.get('user_type') == 'premium'"
+  - from: check_user
+    to: standard_path
+    condition: "input.get('user_type') != 'premium'"
+  - from: premium_path
+    to: end
+  - from: standard_path
+    to: end
+`,
+  rag_flow: `name: RAG Workflow
+nodes:
+  - id: start
+    type: start
+  - id: search
+    type: tool
+    tool: search_knowledge_base
+    args:
+      query: context.input.topic
+  - id: summarize
+    type: tool
+    tool: generate_summary
+    args:
+      context: search.output
+      style: context.input.depth
+  - id: end
+    type: end
+edges:
+  - from: start
+    to: search
+  - from: search
+    to: summarize
+  - from: summarize
     to: end
 `
 };
@@ -299,6 +380,10 @@ const LearningBanner = ({ title, description, codeRef, concept, icon }) => (
 
 function App() {
   const [activeView, setActiveView] = useState('ocr');
+  const [modelStatuses, setModelStatuses] = useState({});
+  const [checkingModelStatus, setCheckingModelStatus] = useState(false);
+  const [enableCodeInterpreter, setEnableCodeInterpreter] = useState(false);
+  const [workflowOutput, setWorkflowOutput] = useState(null);
   // ... existing state ...
   // (We need to keep the state definitions, so I will target specific insertion points below instead of replacing the whole App)
   // But since I cannot do multiple disjoint edits easily in one go without 'multi_replace', 
@@ -308,7 +393,47 @@ function App() {
 
   // Workflow state
   const [workflowFile, setWorkflowFile] = useState(null);
+  // Auto-check on load
+  useEffect(() => {
+    checkModelAvailability();
+  }, []);
+
+  const checkModelAvailability = async () => {
+    setCheckingModelStatus(true);
+    try {
+      const response = await fetch('http://localhost:8003/mcp/health-check');
+      const data = await response.json();
+      if (data.status === 'completed') {
+        const statuses = data.models;
+        setModelStatuses(statuses);
+
+        // Auto-select working model if current is broken
+        const currentStatus = statuses[agentModel]?.status;
+        if (currentStatus === 'quota_exceeded' || currentStatus === 'auth_error' || currentStatus === 'not_found') {
+          // Find first available model
+          const firstAvailable = Object.values(statuses).find(m => m.status === 'available');
+          if (firstAvailable) {
+            setAgentModel(firstAvailable.model);
+            // Optional: Notify user via toast (omitted for simplicity, but logic is here)
+            console.log(`Auto-switched to ${firstAvailable.model} due to ${currentStatus} on ${agentModel}`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to check model availability:", error);
+    } finally {
+      setCheckingModelStatus(false);
+    }
+  };
+
+  const handleModelChipClick = (modelName) => {
+    setAgentModel(modelName);
+  };
+  // Removed redundant state declarations
+
+  const [workflowContent, setWorkflowContent] = useState(null);
   const [inputFile, setInputFile] = useState(null);
+  const [inputContent, setInputContent] = useState(null);
   const [adapter, setAdapter] = useState('mcp');
 
   // Architecture Modal State
@@ -352,6 +477,7 @@ function App() {
 
   // RAG Tab State
   const [ragQuery, setRagQuery] = useState('');
+  const [resultTab, setResultTab] = useState(0);
   const [ragResult, setRagResult] = useState(null);
   const [ragLoading, setRagLoading] = useState(false);
   const [ragError, setRagError] = useState(null);
@@ -498,8 +624,23 @@ function App() {
     setError(null);
     setResult(null);
     const formData = new FormData();
-    formData.append('workflow', workflowFile);
-    formData.append('input_artifact', inputFile);
+
+    if (workflowContent) {
+      const blob = new Blob([workflowContent], { type: 'text/yaml' });
+      const filename = workflowFile ? workflowFile.name : 'workflow.yaml';
+      formData.append('workflow', new File([blob], filename, { type: 'text/yaml' }));
+    } else if (workflowFile) {
+      formData.append('workflow', workflowFile);
+    }
+
+    if (inputContent) {
+      const blob = new Blob([inputContent], { type: 'application/json' });
+      const filename = inputFile ? inputFile.name : 'input.json';
+      formData.append('input_artifact', new File([blob], filename, { type: 'application/json' }));
+    } else if (inputFile) {
+      formData.append('input_artifact', inputFile);
+    }
+
     formData.append('adapter', adapter);
     try {
       // Use direct backend URL
@@ -656,26 +797,21 @@ function App() {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/mcp/request`, {
+      // Use the RPC-style endpoint for better trace visibility
+      const response = await fetch(`${API_BASE_URL}/mcp/call-tool`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          jsonrpc: "2.0",
-          method: "tools/call",
-          params: {
-            name: mcpToolName,
-            arguments: args,
-          },
-          id: 1,
+          tool_name: mcpToolName,
+          arguments: args,
         }),
       });
       if (!response.ok) throw new Error('API error: ' + response.status);
       const data = await response.json();
       setMcpResult(data);
-    } catch (err) {
-      setMcpError(err.message);
+      setError(err.message);
     } finally {
       setMcpLoading(false);
     }
@@ -692,6 +828,7 @@ function App() {
       const formData = new FormData();
       formData.append('prompt', agentPrompt);
       formData.append('model', agentModel);
+      formData.append('enable_code_interpreter', enableCodeInterpreter);
 
       const response = await fetch(`${API_BASE_URL}/agent/execute`, {
         method: 'POST',
@@ -1073,8 +1210,25 @@ function App() {
                   concept="Model Context Protocol (MCP)"
                   icon="🛠️"
                   codeRef="src/agentic_platform/tools/tool_registry.py"
-                  description="MCP standardizes how AI models interact with server-side tools. This demo also showcases RAG (Retrieval Augmented Generation) where the 'search_knowledge_base' tool retrieves documents to ground the model's response."
+                  description="MCP standardizes how AI models interact with server-side tools."
                 />
+
+                <Box sx={{ mb: 3, p: 2, borderLeft: '4px solid #764ba2', bgcolor: '#f3e5f5', borderRadius: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#4a148c', mb: 0.5 }}>
+                    🎓 Why This Matters: The "Universal Connector"
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#6a1b9a', mb: 1 }}>
+                    Before MCP, every AI model had a different way of calling tools (OpenAI Functions, Anthropic Tools, etc.).
+                    MCP provides a <strong>Standard Protocol</strong> (like USB for AI) so you can write a tool <em>once</em> and use it with <em>any</em> model.
+                  </Typography>
+                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.6)', p: 1, borderRadius: 1, border: '1px dashed #ce93d8' }}>
+                    <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#4a148c' }}>
+                      <strong>Real-World Analogy:</strong><br />
+                      Think of MCP as a driver. You don't write a new printer driver for every document you write.
+                      You write one driver, and Word, Excel, and Chrome can all print.
+                    </Typography>
+                  </Box>
+                </Box>
 
                 <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>Call any MCP-registered tool directly with JSON-RPC 2.0</Typography>
 
@@ -1167,8 +1321,36 @@ function App() {
                       </Box>
                     ) : null}
 
-                    <Box sx={{ background: '#f6f8fa', borderRadius: 2, p: 2, fontSize: '0.85rem', fontFamily: 'monospace', overflowX: 'auto', maxHeight: '400px', overflowY: 'auto' }}>
-                      <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#999' }}>Raw JSON-RPC Response:</Typography>
+                    {/* Trace Visualization */}
+                    {mcpResult.trace && mcpResult.trace.length > 0 && (
+                      <Box sx={{ mb: 3, pt: 2, borderTop: '1px dashed #ccc' }}>
+                        <Typography variant="subtitle2" sx={{ mb: 1, color: '#764ba2', display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <span>🔍</span> Execution Trace
+                        </Typography>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          {mcpResult.trace.map((step, idx) => (
+                            <Box key={idx} sx={{ display: 'flex', gap: 2, alignItems: 'flex-start', p: 1, bgcolor: '#fbfbfb', borderRadius: 1, borderLeft: '3px solid #764ba2', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>
+                              <Typography variant="caption" sx={{ minWidth: '80px', fontWeight: 600, color: '#555', mt: 0.5 }}>
+                                {step.layer}
+                              </Typography>
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                  {step.message}
+                                </Typography>
+                                {step.detail && (
+                                  <Typography variant="caption" sx={{ color: '#888', display: 'block', mt: 0.5 }}>
+                                    {step.detail}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </Box>
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+
+                    <Box sx={{ background: '#f6f8fa', borderRadius: 2, p: 2, fontSize: '0.85rem', fontFamily: 'monospace', overflowX: 'auto', maxHeight: '400px', overflowY: 'auto', whiteSpace: 'pre-wrap' }}>
+                      <Typography variant="caption" sx={{ display: 'block', mb: 1, color: '#999' }}>Raw Response:</Typography>
                       {JSON.stringify(mcpResult, null, 2)}
                     </Box>
                   </Box>
@@ -1189,8 +1371,25 @@ function App() {
                 <LearningBanner
                   concept="Retrieval Augmented Generation"
                   icon="🧠"
-                  description="Search the internal knowledge base for specific topics. This uses the 'search_knowledge_base' MCP tool to retrieve relevant context before answering."
+                  description="Search the internal knowledge base for specific topics."
                 />
+
+                <Box sx={{ mb: 3, p: 2, borderLeft: '4px solid #9c27b0', bgcolor: '#f3e5f5', borderRadius: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#4a148c', mb: 0.5 }}>
+                    🎓 Why This Matters: Overcoming Hallucinations
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#6a1b9a', mb: 1 }}>
+                    LLMs are frozen in time (their training data cut-off). They don't know your private data.
+                    <strong>RAG</strong> allows the model to "look up" fresh information before answering, acting like an open-book test.
+                  </Typography>
+                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.6)', p: 1, borderRadius: 1, border: '1px dashed #e1bee7' }}>
+                    <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#4a148c' }}>
+                      <strong>The Equation:</strong><br />
+                      User Query + <em>Retrieved Documents</em> = Accurate Answer<br />
+                      (Without RAG, the model would likely guess or "hallucinate" an answer.)
+                    </Typography>
+                  </Box>
+                </Box>
 
                 {/* Knowledge Base Source Info */}
                 <Box sx={{ mb: 3, border: '1px solid #e0e0e0', borderRadius: 2, overflow: 'hidden' }}>
@@ -1247,9 +1446,29 @@ function App() {
                     ))}
                   </Box>
 
-                  <Box sx={{ display: 'flex', gap: 1 }}>
+                  {/* Code Interpreter Toggle */}
+                  <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Button
+                      variant={enableCodeInterpreter ? "contained" : "outlined"}
+                      color={enableCodeInterpreter ? "secondary" : "primary"}
+                      onClick={() => setEnableCodeInterpreter(!enableCodeInterpreter)}
+                      startIcon={<CodeIcon />}
+                      size="small"
+                      sx={{ textTransform: 'none' }}
+                    >
+                      {enableCodeInterpreter ? "Code Interpreter Active" : "Enable Code Interpreter"}
+                    </Button>
+                    <Tooltip title="Allows the agent to write and execute Python code to solve problems." arrow>
+                      <Typography variant="caption" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                        (Experimental)
+                      </Typography>
+                    </Tooltip>
+                  </Box>
+
+                  <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                     <TextField
                       fullWidth
+                      label="Ask the Agent..."
                       value={ragQuery}
                       onChange={e => setRagQuery(e.target.value)}
                       placeholder="e.g., Explain the difference between TCP and UDP"
@@ -1301,41 +1520,83 @@ function App() {
                   concept="Deterministic State Machine"
                   icon="⚡"
                   codeRef="demo_workflow.yaml"
-                  description="Unlike an Agent, a Workflow follows a pre-defined path defined in `demo_workflow.yaml`. We use `LangGraph` to compile a state machine from this YAML conf, ensuring deterministic execution of steps. The 'Input' is a JSON payload injection."
+                  description="A Workflow follows a pre-defined path defined in YAML."
                 />
+
+                <Box sx={{ mb: 3, p: 2, borderLeft: '4px solid #ed6c02', bgcolor: '#fff3e0', borderRadius: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#e65100', mb: 0.5 }}>
+                    🎓 Why This Matters: Reliability & Control
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#ef6c00', mb: 1 }}>
+                    In enterprise software, you often need <strong>Guarantees</strong>. You need to know that Step B <em>always</em> happens after Step A.
+                    Workflows are "Pre-Planned" routes, whereas Agents are "GPS Navigation" that might change routes based on traffic.
+                  </Typography>
+                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.6)', p: 1, borderRadius: 1, border: '1px dashed #ffb74d' }}>
+                    <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#e65100' }}>
+                      <strong>Analogy:</strong><br />
+                      <strong>Workflow:</strong> A Train on tracks. Validated, safe, goes exactly where designed.<br />
+                      <strong>Agent:</strong> A Taxi driver. Flexible, can take shortcuts, but might get lost or take a weird route.
+                    </Typography>
+                  </Box>
+                </Box>
 
 
 
                 <Typography variant="body2" color="textSecondary" sx={{ mb: 3 }}>Upload workflow YAML and input JSON to execute</Typography>
 
-                <Box component="form" onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2 }}>
+                {/* Workflow Examples */}
+                <Box sx={{ mb: 1, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 600, mb: 1, display: 'block', color: '#666' }}>🚀 Quick Start: Load Example Workflow</Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    {Object.keys(WORKFLOW_EXAMPLES).map(key => (
+                      <Button
+                        key={key}
+                        type="button"
+                        variant="outlined"
+                        size="small"
+                        onClick={() => {
+                          console.log("Loading workflow for key:", key);
+                          const wfContent = WORKFLOW_EXAMPLES[key];
+                          console.log("Workflow Content:", wfContent ? "Found" : "Missing");
 
-                  {/* Workflow Examples */}
-                  <Box sx={{ mb: 1, p: 2, bgcolor: '#f5f5f5', borderRadius: 1 }}>
-                    <Typography variant="caption" sx={{ fontWeight: 600, mb: 1, display: 'block', color: '#666' }}>🚀 Quick Start: Load Example Workflow</Typography>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      {Object.keys(WORKFLOW_EXAMPLES).map(key => (
-                        <Button
-                          key={key}
-                          variant="outlined"
-                          size="small"
-                          onClick={() => {
-                            const blob = new Blob([WORKFLOW_EXAMPLES[key]], { type: 'text/yaml' });
-                            const file = new File([blob], `${key}_workflow.yaml`, { type: 'text/yaml' });
-                            setWorkflowFile(file);
-                          }}
-                          sx={{ textTransform: 'none', bgcolor: 'white' }}
-                        >
-                          {key.charAt(0).toUpperCase() + key.slice(1)} Flow
-                        </Button>
-                      ))}
-                    </Box>
+                          const blob = new Blob([wfContent], { type: 'text/yaml' });
+                          const file = new File([blob], `${key}_workflow.yaml`, { type: 'text/yaml' });
+                          setWorkflowFile(file);
+                          setWorkflowContent(wfContent);
+
+                          // Auto-load corresponding input if available
+                          if (WORKFLOW_INPUTS[key]) {
+                            console.log("Input found for:", key);
+                            const inputBlob = new Blob([WORKFLOW_INPUTS[key]], { type: 'application/json' });
+                            const inputFile = new File([inputBlob], `${key}_input.json`, { type: 'application/json' });
+                            setInputFile(inputFile);
+                            setInputContent(WORKFLOW_INPUTS[key]);
+                          } else {
+                            console.warn("No input found for:", key);
+                          }
+                        }}
+                        sx={{ textTransform: 'none', bgcolor: 'white' }}
+                      >
+                        {key.charAt(0).toUpperCase() + key.slice(1)} Flow
+                      </Button>
+                    ))}
                   </Box>
+                </Box>
+
+                <Box component="form" onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2 }}>
 
                   <Box>
                     <Button variant="contained" component="label" sx={{ mb: 1, width: '100%' }}>
                       Upload Workflow YAML
-                      <input type="file" accept=".yaml,.yml" hidden onChange={e => setWorkflowFile(e.target.files[0])} />
+                      <input type="file" accept=".yaml,.yml" hidden onChange={e => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setWorkflowFile(file);
+                          const reader = new FileReader();
+                          reader.onload = (e) => setWorkflowContent(e.target.result);
+                          reader.readAsText(file);
+                        }
+                      }} />
                     </Button>
                     {workflowFile && (
                       <Typography variant="body2" sx={{ color: '#4caf50', fontWeight: 500 }}>
@@ -1347,7 +1608,15 @@ function App() {
                   <Box>
                     <Button variant="contained" component="label" sx={{ mb: 1, width: '100%' }}>
                       Upload Input JSON
-                      <input type="file" accept=".json" hidden onChange={e => setInputFile(e.target.files[0])} />
+                      <input type="file" accept=".json" hidden onChange={e => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setInputFile(file);
+                          const reader = new FileReader();
+                          reader.onload = (e) => setInputContent(e.target.result);
+                          reader.readAsText(file);
+                        }
+                      }} />
                     </Button>
                     {inputFile && (
                       <Typography variant="body2" sx={{ color: '#4caf50', fontWeight: 500 }}>
@@ -1371,6 +1640,7 @@ function App() {
                             .then(text => {
                               const file = new File([text], 'demo_workflow.yaml', { type: 'application/x-yaml' });
                               setWorkflowFile(file);
+                              setWorkflowContent(text);
                             })
                             .catch(err => {
                               console.error('Failed to load demo workflow:', err);
@@ -1402,6 +1672,7 @@ function App() {
                             .then(text => {
                               const file = new File([text], 'demo_input.json', { type: 'application/json' });
                               setInputFile(file);
+                              setInputContent(text);
                             })
                             .catch(err => {
                               console.error('Failed to load demo input:', err);
@@ -1427,6 +1698,66 @@ function App() {
                     </Box>
                   </Box>
 
+                  {/* File Previews */}
+                  {/* File Previews / Editors */}
+                  {(workflowContent || inputContent) && (
+                    <Box sx={{ mb: 2, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                      {workflowContent && (
+                        <Box>
+                          <Typography variant="caption" fontWeight={600} sx={{ display: 'block', mb: 0.5, color: '#666' }}>
+                            Workflow Editor ({workflowFile?.name})
+                          </Typography>
+                          <TextField
+                            multiline
+                            fullWidth
+                            minRows={10}
+                            maxRows={20}
+                            value={workflowContent || ''}
+                            onChange={e => setWorkflowContent(e.target.value)}
+                            sx={{
+                              bgcolor: '#f8f9fa',
+                              '& .MuiInputBase-root': {
+                                fontFamily: 'monospace',
+                                fontSize: '0.75rem',
+                                padding: 1.5
+                              }
+                            }}
+                            inputProps={{
+                              spellCheck: 'false'
+                            }}
+                          />
+                        </Box>
+                      )}
+
+                      {inputContent && (
+                        <Box>
+                          <Typography variant="caption" fontWeight={600} sx={{ display: 'block', mb: 0.5, color: '#666' }}>
+                            Input Editor ({inputFile?.name})
+                          </Typography>
+                          <TextField
+                            multiline
+                            fullWidth
+                            minRows={10}
+                            maxRows={20}
+                            value={inputContent || ''}
+                            onChange={e => setInputContent(e.target.value)}
+                            sx={{
+                              bgcolor: '#f8f9fa',
+                              '& .MuiInputBase-root': {
+                                fontFamily: 'monospace',
+                                fontSize: '0.75rem',
+                                padding: 1.5
+                              }
+                            }}
+                            inputProps={{
+                              spellCheck: 'false'
+                            }}
+                          />
+                        </Box>
+                      )}
+                    </Box>
+                  )}
+
                   <FormControl fullWidth>
                     <InputLabel id="adapter-label">Adapter</InputLabel>
                     <Select
@@ -1435,10 +1766,28 @@ function App() {
                       label="Adapter"
                       onChange={e => setAdapter(e.target.value)}
                     >
-                      <MenuItem value="mcp">MCP</MenuItem>
+                      <MenuItem value="mcp">MCP (Default)</MenuItem>
                       <MenuItem value="langgraph">LangGraph</MenuItem>
                     </Select>
                   </FormControl>
+
+                  {adapter === 'mcp' && (
+                    <Alert severity="info" sx={{ mt: 2, mb: 0, fontSize: '0.85rem' }}>
+                      <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                        Default Engine (Custom)
+                      </Typography>
+                      The Default Engine (<code>adapter="mcp"</code>) is our custom-built, lightweight workflow orchestrator. It is designed for <strong>fast, deterministic execution</strong> of MCP tools without the overhead of a complex framework. It supports conditional logic, loops, and state persistence, making it ideal for standard business processes and linear automation tasks.
+                    </Alert>
+                  )}
+
+                  {adapter === 'langgraph' && (
+                    <Alert severity="info" sx={{ mt: 2, mb: 0, fontSize: '0.85rem' }}>
+                      <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                        LangGraph Adapter
+                      </Typography>
+                      The LangGraph Adapter (<code>adapter="langgraph"</code>) allows the workflow to be executed by the <strong>LangGraph</strong> engine instead of our default engine. This is useful if you want to leverage LangChain features like graph cycles, memory, or advanced state management in your workflow definitions. For simple DAGs (Directed Acyclic Graphs), both adapters work similarly.
+                    </Alert>
+                  )}
                   <Button type="submit" variant="contained" color="primary" disabled={loading}>
                     {loading ? <CircularProgress size={24} color="inherit" /> : 'Run Workflow'}
                   </Button>
@@ -1446,29 +1795,167 @@ function App() {
                 {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
 
                 {result && (
-                  <Box sx={{ mt: 3 }}>
-                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>Workflow Results</Typography>
+                  <Box sx={{ mt: 4 }}>
+                    <Typography variant="h6" fontWeight={700} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      🏁 Workflow Execution Results
+                    </Typography>
 
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="subtitle2" fontWeight={600}>Result Output</Typography>
-                      <Box component="pre" sx={{ background: '#f6f8fa', borderRadius: 2, p: 2, fontSize: '0.85rem', overflowX: 'auto', maxHeight: '300px', overflowY: 'auto' }}>
-                        {result.result ? JSON.stringify(result.result, null, 2) : 'No result'}
-                      </Box>
+                    <Alert severity="info" sx={{ mb: 3, bgcolor: '#e3f2fd', color: '#0d47a1', border: '1px solid #bbdefb' }}>
+                      <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                        One Execution, Three Perspectives
+                      </Typography>
+                      <Typography variant="body2" sx={{ mb: 1 }}>
+                        These tabs show different views of the <strong>Same Execution Cycle</strong>:
+                      </Typography>
+                      <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.85rem' }}>
+                        <li><strong>Detailed Steps:</strong> Inspect the <em>Data Flow</em> (Input &rarr; Output) between nodes.</li>
+                        <li><strong>Audit Timeline:</strong> Trace the <em>Time Flow</em> (Start &rarr; End) ensuring deterministic order.</li>
+                        <li><strong>Raw JSON:</strong> The actual <em>Data Payload</em> sent to the API and returned.</li>
+                      </ul>
+                    </Alert>
+
+                    {/* Result Tabs */}
+                    <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+                      <Tabs value={resultTab} onChange={(e, v) => setResultTab(v)} aria-label="workflow results tabs">
+                        <Tab label="📊 Detailed Steps" value={0} sx={{ textTransform: 'none', fontWeight: 600 }} />
+                        <Tab label="⏱️ Audit Timeline" value={1} sx={{ textTransform: 'none', fontWeight: 600 }} />
+                        <Tab label="📝 Raw JSON" value={2} sx={{ textTransform: 'none', fontWeight: 600 }} />
+                      </Tabs>
                     </Box>
 
-                    <Box sx={{ mb: 2 }}>
-                      <Typography variant="subtitle2" fontWeight={600}>Tool Results</Typography>
-                      <Box component="pre" sx={{ background: '#f6f8fa', borderRadius: 2, p: 2, fontSize: '0.85rem', overflowX: 'auto', maxHeight: '300px', overflowY: 'auto' }}>
-                        {result.tool_results ? JSON.stringify(result.tool_results, null, 2) : 'No tool results'}
-                      </Box>
-                    </Box>
+                    {/* Tab 0: Detailed Steps */}
+                    {resultTab === 0 && (
+                      <Box>
+                        <Box sx={{ mb: 2, p: 2, borderLeft: '4px solid #4caf50', bgcolor: '#f1f8e9', borderRadius: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2e7d32', mb: 0.5 }}>
+                            🎓 Learning Goal: Transform Data
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#33691e', mb: 1 }}>
+                            In a workflow, data flows like water through pipes. Each step is a <strong>pure function</strong>: it takes input from the previous step and produces new output.
+                          </Typography>
+                          <Box sx={{ bgcolor: 'rgba(255,255,255,0.6)', p: 1, borderRadius: 1, border: '1px dashed #a5d6a7' }}>
+                            <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#1b5e20' }}>
+                              <strong>Example:</strong><br />
+                              Step 1 Input: <code>{`{ "text": "Hello World" }`}</code><br />
+                              Step 1 Output: <code>{`{ "summary": "Greeting" }`}</code><br />
+                              Step 2 Input: <code>{`{ "context": "Greeting" }`}</code> (Received from Step 1)
+                            </Typography>
+                          </Box>
+                        </Box>
+                        {/* Final Output Hero Card */}
+                        <Paper elevation={0} sx={{ p: 2, mb: 3, bgcolor: '#e8f5e9', border: '1px solid #c8e6c9', borderRadius: 2 }}>
+                          <Typography variant="subtitle2" sx={{ color: '#2e7d32', fontWeight: 700, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <CheckCircle fontSize="small" /> Final Output
+                          </Typography>
+                          <Box component="pre" sx={{ m: 0, p: 1.5, bgcolor: '#fff', borderRadius: 1, fontSize: '0.85rem', overflowX: 'auto', border: '1px solid #a5d6a7' }}>
+                            {result.result ? JSON.stringify(result.result, null, 2) : 'No result'}
+                          </Box>
+                        </Paper>
 
-                    <Box>
-                      <Typography variant="subtitle2" fontWeight={600}>Audit Log</Typography>
-                      <Box component="pre" sx={{ background: '#f6f8fa', borderRadius: 2, p: 2, fontSize: '0.85rem', overflowX: 'auto', maxHeight: '300px', overflowY: 'auto' }}>
-                        {result.audit_log ? JSON.stringify(result.audit_log, null, 2) : 'No audit log'}
+                        <Typography variant="subtitle2" sx={{ mb: 2, color: '#666', fontWeight: 600 }}>Execution Steps:</Typography>
+                        {result.tool_results && result.tool_results.length > 0 ? (
+                          result.tool_results.map((step, index) => (
+                            <Accordion key={index} defaultExpanded={true} elevation={0} sx={{ border: '1px solid #eee', mb: 1, '&:before': { display: 'none' } }}>
+                              <AccordionSummary expandIcon={<ExpandMore />}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                  <Chip label={index + 1} size="small" color="primary" sx={{ height: 20, fontSize: '0.7rem' }} />
+                                  <Typography fontWeight={600} sx={{ fontSize: '0.9rem' }}>{step.node_id}</Typography>
+                                  {step.result?.mock && <Chip label="Mock" size="small" variant="outlined" sx={{ height: 20, fontSize: '0.65rem', color: '#999', borderColor: '#ddd' }} />}
+                                </Box>
+                              </AccordionSummary>
+                              <AccordionDetails sx={{ pt: 0 }}>
+                                <Box component="pre" sx={{ m: 0, p: 1.5, bgcolor: '#f8f9fa', borderRadius: 1, fontSize: '0.8rem', overflowX: 'auto', border: '1px solid #f0f0f0' }}>
+                                  {JSON.stringify(step.result, null, 2)}
+                                </Box>
+                              </AccordionDetails>
+                            </Accordion>
+                          ))
+                        ) : (
+                          <Alert severity="info" sx={{ py: 0 }}>No steps recorded.</Alert>
+                        )}
                       </Box>
-                    </Box>
+                    )}
+
+                    {/* Tab 1: Audit Timeline */}
+                    {resultTab === 1 && (
+                      <Box sx={{ maxHeight: '400px', overflowY: 'auto', pr: 1 }}>
+                        <Box sx={{ mb: 2, p: 2, borderLeft: '4px solid #2196f3', bgcolor: '#e3f2fd', borderRadius: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1565c0', mb: 0.5 }}>
+                            🎓 Learning Goal: Deterministic Order
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#0d47a1', mb: 1 }}>
+                            Unlike an <strong>Autonomous Agent</strong> (which loops and decides its own path), a <strong>Workflow</strong> is a rigid state machine.
+                          </Typography>
+                          <Box sx={{ bgcolor: 'rgba(255,255,255,0.6)', p: 1, borderRadius: 1, border: '1px dashed #90caf9' }}>
+                            <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#0d47a1' }}>
+                              <strong>Observation:</strong><br />
+                              Even if "Step B" takes 5 seconds and "Step C" takes 1 second, the system forces them to run in the exact order defined in your YAML: <code>Start &rarr; A &rarr; B &rarr; C &rarr; End</code>.
+                            </Typography>
+                          </Box>
+                        </Box>
+                        {result.audit_log ? (
+                          <List dense>
+                            {result.audit_log.map((event, idx) => (
+                              <ListItem key={idx} sx={{ borderLeft: '2px solid #e0e0e0', ml: 2, pl: 2, pb: 2, alignItems: 'flex-start' }}>
+                                <ListItemIcon sx={{ minWidth: 32, mt: 0.5 }}>
+                                  {event.event_type === 'STEP_STARTED' && <PlayCircle fontSize="small" sx={{ color: '#2196f3' }} />}
+                                  {event.event_type === 'STEP_ENDED' && <CheckCircle fontSize="small" sx={{ color: '#4caf50' }} />}
+                                  {event.event_type === 'STEP_ERRORED' && <ErrorIcon fontSize="small" sx={{ color: '#f44336' }} />}
+                                </ListItemIcon>
+                                <ListItemText
+                                  primary={
+                                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                      <Typography variant="body2" fontWeight={600}>{event.node_id}</Typography>
+                                      <Chip label={event.event_type.replace('STEP_', '')} size="small"
+                                        color={event.event_type === 'STEP_ENDED' ? 'success' : event.event_type === 'STEP_ERRORED' ? 'error' : 'default'}
+                                        variant="outlined" sx={{ height: 20, fontSize: '0.65rem' }}
+                                      />
+                                    </Box>
+                                  }
+                                  secondary={
+                                    <React.Fragment>
+                                      <Typography variant="caption" display="block" color="text.secondary" fontFamily="monospace">
+                                        {new Date(event.timestamp).toLocaleTimeString()}
+                                      </Typography>
+                                      <Typography variant="caption" color="text.secondary">
+                                        Job ID: {event.job_id.substring(0, 8)}...
+                                      </Typography>
+                                    </React.Fragment>
+                                  }
+                                />
+                              </ListItem>
+                            ))}
+                          </List>
+                        ) : (
+                          <Alert severity="warning">No audit log available.</Alert>
+                        )}
+                      </Box>
+                    )}
+
+                    {/* Tab 2: Raw JSON */}
+                    {resultTab === 2 && (
+                      <Box>
+                        <Box sx={{ mb: 2, p: 2, borderLeft: '4px solid #ff9800', bgcolor: '#fff3e0', borderRadius: 1 }}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#e65100', mb: 0.5 }}>
+                            🎓 Learning Goal: The API Contract
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#e65100', mb: 1 }}>
+                            This raw JSON is the "source of truth". Real-world applications consume this response to power features.
+                          </Typography>
+                          <Box sx={{ bgcolor: 'rgba(255,255,255,0.6)', p: 1, borderRadius: 1, border: '1px dashed #ffcc80' }}>
+                            <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#bf360c' }}>
+                              <strong>Integration Tip:</strong><br />
+                              Your frontend code would access:<br />
+                              <code>result.result</code> to display the final answer.<br />
+                              <code>result.tool_results[0].output</code> to show intermediate progress.
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Box component="pre" sx={{ background: '#282c34', color: '#abb2bf', borderRadius: 2, p: 2, fontSize: '0.8rem', overflowX: 'auto', maxHeight: '500px', overflowY: 'auto' }}>
+                          {JSON.stringify(result, null, 2)}
+                        </Box>
+                      </Box>
+                    )}
                   </Box>
                 )}
               </CardContent>
@@ -1490,8 +1977,28 @@ function App() {
                   concept="ReAct Loop (Reason + Act)"
                   icon="🧠"
                   codeRef="src/agentic_platform/agent.py"
-                  description="This is an Autonomous Agent. It uses a Large Language Model (LLM) to **Reason** about your task, decide which **Tool** to call, execute it, and observe the result."
+                  description="This is an Autonomous Agent."
                 />
+
+                <Box sx={{ mb: 3, p: 2, borderLeft: '4px solid #ff6b6b', bgcolor: '#ffebee', borderRadius: 1 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#c62828', mb: 0.5 }}>
+                    🎓 Why This Matters: Autonomy vs. Automation
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#d32f2f', mb: 1 }}>
+                    A <strong>Workflow</strong> (previous tab) follows a fixed path (A &rarr; B &rarr; C).
+                    An <strong>Agent</strong> (this tab) figures out the path itself. It uses a loop:
+                    <strong>Thought &rarr; Action &rarr; Observation</strong>.
+                  </Typography>
+                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.6)', p: 1, borderRadius: 1, border: '1px dashed #ef9a9a' }}>
+                    <Typography variant="caption" sx={{ fontFamily: 'monospace', color: '#b71c1c' }}>
+                      <strong>Example Scenario:</strong><br />
+                      "Book me a flight to whichever city is sunny tomorrow."<br />
+                      1. <strong>Agent</strong> calls Weather Tool to check cities.<br />
+                      2. <strong>Agent</strong> decides which city is sunny (Reasoning).<br />
+                      3. <strong>Agent</strong> calls Flight Tool for that specific city.
+                    </Typography>
+                  </Box>
+                </Box>
 
 
 
@@ -1534,11 +2041,115 @@ function App() {
                       label="Model"
                       disabled={agentLoading}
                     >
-                      <MenuItem value="mock-llm">Mock LLM (Free)</MenuItem>
-                      <MenuItem value="claude-3.5-sonnet">Claude 3.5 Sonnet</MenuItem>
-                      <MenuItem value="gpt-4">GPT-4</MenuItem>
+                      {Object.keys(modelStatuses).length > 0 ? (
+                        Object.entries(modelStatuses)
+                          .filter(([_, status]) => status.status === 'available')
+                          .map(([model, _]) => (
+                            <MenuItem key={model} value={model}>
+                              {model === 'mock-llm' ? 'Mock LLM (Free)' :
+                                model.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                            </MenuItem>
+                          ))
+                      ) : (
+                        [
+                          <MenuItem key="mock" value="mock-llm">Mock LLM (Free)</MenuItem>,
+                          <MenuItem key="loading" disabled>Loading models...</MenuItem>
+                        ]
+                      )}
                     </Select>
                   </FormControl>
+
+                  {/* Model Availability Check */}
+                  <Box sx={{ mt: 1, mb: 2 }}>
+                    <Button
+                      variant="text"
+                      size="small"
+                      startIcon={checkingModelStatus ? <CircularProgress size={16} /> : <NetworkCheckIcon />}
+                      onClick={checkModelAvailability}
+                      disabled={checkingModelStatus}
+                    >
+                      {checkingModelStatus ? "Checking Quota..." : "Check Model Availability"}
+                    </Button>
+
+                    {Object.keys(modelStatuses).length > 0 && (
+                      <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {Object.entries(modelStatuses).map(([model, status]) => {
+                          let color = 'default';
+                          let icon = null;
+                          let label = model;
+
+                          switch (status.status) {
+                            case 'available':
+                              color = 'success';
+                              icon = <CheckCircleIcon fontSize="small" />;
+                              break;
+                            case 'quota_exceeded':
+                              color = 'error';
+                              icon = <ErrorIcon fontSize="small" />;
+                              label += " (Quota)";
+                              break;
+                            case 'not_found':
+                              color = 'warning';
+                              label += " (N/A)";
+                              break;
+                            case 'auth_error':
+                              color = 'warning';
+                              label += " (Auth)";
+                              break;
+                            default:
+                              color = 'default';
+                          }
+
+                          // Prepare tooltip content with detailed metrics
+                          let tooltipContent = (
+                            <Box sx={{ p: 1 }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.2)', mb: 1, pb: 0.5 }}>
+                                {model} Status: {status.status.toUpperCase()}
+                              </Typography>
+                              {status.error && (
+                                <Typography variant="caption" sx={{ color: '#ffcdd2', display: 'block', mb: 1 }}>
+                                  Error: {status.error}
+                                </Typography>
+                              )}
+                              {status.kpis ? (
+                                <Box sx={{ display: 'grid', gap: 0.5 }}>
+                                  <Typography variant="caption">
+                                    <strong>Limit:</strong> {status.kpis.limit || 'N/A'}
+                                  </Typography>
+                                  <Typography variant="caption">
+                                    <strong>Usage:</strong> {status.kpis.usage || 'N/A'}
+                                  </Typography>
+                                  <Typography variant="caption">
+                                    <strong>Resets:</strong> {status.kpis.reset_time || 'N/A'}
+                                  </Typography>
+                                </Box>
+                              ) : (
+                                <Typography variant="caption" sx={{ fontStyle: 'italic', opacity: 0.8 }}>
+                                  No detailed metrics available.
+                                </Typography>
+                              )}
+                            </Box>
+                          );
+                          return (
+                            <Tooltip key={model} title={tooltipContent} arrow placement="top">
+                              <Chip
+                                icon={icon}
+                                label={label}
+                                color={color}
+                                size="small"
+                                variant="outlined"
+                                onClick={() => handleModelChipClick(model)}
+                                sx={{
+                                  borderColor: agentModel === model ? 'primary.main' : undefined,
+                                  borderWidth: agentModel === model ? 2 : 1
+                                }}
+                              />
+                            </Tooltip>
+                          );
+                        })}
+                      </Box>
+                    )}
+                  </Box>
 
                   <Button
                     type="submit"
