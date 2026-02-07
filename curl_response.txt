@@ -1,0 +1,26 @@
+Note: Unnecessary use of -X or --request, POST is already inferred.
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:8003...
+* connect to ::1 port 8003 failed: Connection refused
+*   Trying 127.0.0.1:8003...
+* Connected to localhost (127.0.0.1) port 8003
+> POST /agent/execute HTTP/1.1
+> Host: localhost:8003
+> User-Agent: curl/8.4.0
+> Accept: */*
+> Content-Length: 272
+> Content-Type: multipart/form-data; boundary=------------------------JSlrKMSIShnz9VQUIqFOgx
+> 
+} [272 bytes data]
+* We are completely uploaded and fine
+100   272    0     0  100   272      0    225  0:00:01  0:00:01 --:--:--   225100   272    0     0  100   272      0    123  0:00:02  0:00:02 --:--:--   123100   272    0     0  100   272      0     84  0:00:03  0:00:03 --:--:--    84100   272    0     0  100   272      0     64  0:00:04  0:00:04 --:--:--    64100   272    0     0  100   272      0     52  0:00:05  0:00:05 --:--:--    52100   272    0     0  100   272      0     43  0:00:06  0:00:06 --:--:--     0100   272    0     0  100   272      0     37  0:00:07  0:00:07 --:--:--     0100   272    0     0  100   272      0     33  0:00:08  0:00:08 --:--:--     0< HTTP/1.1 200 OK
+< date: Sat, 07 Feb 2026 17:27:22 GMT
+< server: uvicorn
+< content-length: 582
+< content-type: application/json
+< 
+{ [582 bytes data]
+100   854  100   582  100   272     67     31  0:00:08  0:00:08 --:--:--   130100   854  100   582  100   272     67     31  0:00:08  0:00:08 --:--:--   168
+* Connection #0 to host localhost left intact
+{"status":"error","final_output":"Hello","reasoning_steps":[],"iterations":1,"tool_calls":[],"error":"File path/to/credentials.json was not found.","model_used":"gemini-1.5-pro","llm_setup":{"use_mock_llm":false,"api_keys_configured":{"anthropic":true,"openai":true,"google":true},"default_model":"gemini-1.5-pro","available_models":{"anthropic":["claude-3.5-sonnet","claude-3-opus","claude-3-sonnet","claude-3-haiku"],"openai":["gpt-4-turbo","gpt-4","gpt-3.5-turbo"],"google":["gemini-1.5-pro","gemini-1.5-flash","gemini-2.0-flash","gemini-2","gemini-3-pro"],"mock":["mock-llm"]}}}

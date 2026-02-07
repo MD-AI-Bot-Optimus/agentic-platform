@@ -14,6 +14,19 @@ import tempfile
 from pathlib import Path
 from typing import Optional, Dict, Any
 
+from dotenv import load_dotenv
+from agentic_platform.core.secrets import SecretManager
+
+# 1. Load environment variables from .env file (Local Dev)
+load_dotenv(override=True)
+
+# 2. Hybrid Load: Fetch missing secrets from Google Secret Manager (Production)
+SecretManager.load_secrets([
+    "GOOGLE_API_KEY",
+    "ANTHROPIC_API_KEY", 
+    "OPENAI_API_KEY"
+])
+
 import yaml
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException, Body, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,6 +39,7 @@ from agentic_platform.adapters.mcp_server import MCPServer
 # from agentic_platform.adapters.mcp_adapter import MCPAdapter
 # from agentic_platform.adapters.langgraph_adapter import LangGraphAdapter
 from agentic_platform.workflow import engine
+from agentic_platform.core.trace import init_trace, get_trace, add_trace_step
 
 logger = logging.getLogger(__name__)
 
@@ -78,19 +92,19 @@ async def root():
 @app.get("/demo_workflow.yaml")
 async def get_demo_workflow():
     """Serve demo workflow YAML file."""
-    demo_path = Path(__file__).parent.parent.parent / "demo_workflow.yaml"
+    demo_path = Path(__file__).parent.parent.parent / "examples" / "workflows" / "demo_workflow.yaml"
     if demo_path.exists():
         return FileResponse(demo_path, media_type="application/x-yaml", filename="demo_workflow.yaml")
-    raise HTTPException(status_code=404, detail="Demo workflow file not found")
+    raise HTTPException(status_code=404, detail=f"Demo workflow file not found at {demo_path}")
 
 
 @app.get("/demo_input.json")
 async def get_demo_input():
     """Serve demo input JSON file."""
-    demo_path = Path(__file__).parent.parent.parent / "demo_input.json"
+    demo_path = Path(__file__).parent.parent.parent / "examples" / "data" / "demo_input.json"
     if demo_path.exists():
         return FileResponse(demo_path, media_type="application/json", filename="demo_input.json")
-    raise HTTPException(status_code=404, detail="Demo input file not found")
+    raise HTTPException(status_code=404, detail=f"Demo input file not found at {demo_path}")
 
 
 @app.get("/sample_data/{file_path:path}")
@@ -591,21 +605,22 @@ async def call_mcp_tool(request: Dict[str, Any]) -> JSONResponse:
 
         logger.debug(f"MCP tool call: {tool_name} with args: {arguments}")
 
-        # Get tool from registry
-        tool_spec = tool_registry.get_tool(tool_name)
-        if not tool_spec:
-            return JSONResponse({
-                "error": "Tool not found",
-                "message": f"Tool '{tool_name}' not found"
-            }, status_code=404)
+        # Initialize trace
+        init_trace()
+        add_trace_step("API Container", f"Received request", f"Tool: {tool_name}")
 
-        # Call the tool
-        result = tool_spec.handler(arguments)
+        # Call the tool via registry to ensure validation and tracing
+        result = tool_registry.call(tool_name, arguments)
+
+        # Capture trace
+        trace_data = get_trace()
+        trace_dict = trace_data.to_dict() if trace_data else []
 
         logger.debug(f"MCP tool result: {result}")
         return JSONResponse({
             "tool_name": tool_name,
-            "result": result
+            "result": result,
+            "trace": trace_dict
         })
 
     except Exception as e:
@@ -632,14 +647,14 @@ async def list_mcp_tools() -> JSONResponse:
 
         for name in tool_names:
             tool_spec = tool_registry.get_tool(name)
-            if tool_spec:
+            if tool_spec and tool_spec.visible:
                 tools.append({
                     "name": name,
                     "description": tool_spec.description,
                     "inputSchema": tool_spec.schema
                 })
 
-        logger.debug(f"Listed {len(tools)} tools")
+        logger.debug(f"Listed {len(tools)} tools (hidden: {len(tool_names) - len(tools)})")
         return JSONResponse({"tools": tools})
 
     except Exception as e:
@@ -651,59 +666,52 @@ async def list_mcp_tools() -> JSONResponse:
 
 
 @app.post("/agent/execute")
-async def execute_agent(prompt: str = Form(...), model: str = Form("mock-llm")):
+async def execute_agent(
+    prompt: str = Form(...), 
+    model: str = Form("mock-llm"),
+    enable_code_interpreter: bool = Form(False)
+):
     """
     Execute LangGraph agent with a prompt.
-    
-    Demonstrates autonomous reasoning with tool orchestration.
-    
-    Query parameters:
-    - prompt: User query for the agent
-    - model: LLM model to use (default: mock-llm for cost-free demo)
-             Options: mock-llm, claude-3.5-sonnet, gpt-4-turbo, gemini-1.5-pro
-    
-    Returns:
-    - status: success/incomplete/error
-    - final_output: Agent's response
-    - reasoning_steps: List of reasoning steps
-    - iterations: Number of iterations
-    - tool_calls: Tools executed
+    ...
     """
     try:
         from agentic_platform.adapters.langgraph_agent import LangGraphAgent
         from agentic_platform.llm import get_llm_model, validate_llm_setup
         
-        logger.info(f"Agent execution request: model={model}, prompt length={len(prompt)}")
+        logger.info(f"Agent execution request: model={model}, code_interpreter={enable_code_interpreter}")
         
+        # ... (LLM setup code) ...
         # Validate LLM setup
         setup_status = validate_llm_setup()
-        logger.debug(f"LLM setup status: {setup_status}")
         
         # Get the appropriate LLM based on model parameter
         try:
             llm = get_llm_model(model=model)
-            logger.info(f"Initialized LLM: {model}")
-        except ValueError as e:
-            logger.warning(f"Could not initialize real LLM ({model}): {str(e)}, falling back to mock LLM")
+        except ValueError:
             from agentic_platform.llm.mock_llm import MockLLM
             llm = MockLLM(model=model)
         
         # Prepare tools for the agent
-        # LangGraphAgent expects objects with .name and .func attributes (like LangChain tools)
         agent_tools = []
         for name in tool_registry.list_tools():
+            # Skip code interpreter unless explicitly enabled
+            if name == "python_interpreter" and not enable_code_interpreter:
+                continue
+                
             spec = tool_registry.get_tool(name)
             if spec:
                 # Create a simple adapter object
                 class ToolAdapter:
-                    def __init__(self, spec):
-                        self.name = spec.name
-                        self.description = spec.description
-                        self.spec = spec
+                    def __init__(self, s):
+                        self.name = s.name
+                        self.description = s.description
+                        self.spec = s
+                        self.func = lambda **kwargs: s.handler(kwargs)
                     
-                    def func(self, **kwargs):
-                        # Repack unpacked kwargs back into a dict for the handler
-                        return self.spec.handler(kwargs)
+                    # LangChain expects .run method or __call__
+                    def _run(self, *args, **kwargs):
+                        return self.func(**kwargs)
                         
                 agent_tools.append(ToolAdapter(spec))
         
@@ -776,7 +784,111 @@ async def list_agent_models():
             status_code=500,
             detail=f"Failed to list models: {str(e)}"
         )
+@app.get("/mcp/health-check")
+async def health_check_models():
+    """
+    Check availability and quota status of configured LLM models.
+    
+    Iterates through Google models (and potentially others) to verify if they are:
+    - Online (200 OK)
+    - Quota Exceeded (429)
+    - Auth Error (401/403)
+    
+    Returns:
+        JSON with status for each model.
+    """
+    from agentic_platform.llm import get_llm_model, LLMProvider
+    import asyncio
+    
+    results = {}
+    
+    # Models to check (focus on Google for now as per user request)
+    models_to_check = [
+        ("gemini-1.5-pro", LLMProvider.GOOGLE),
+        ("gemini-1.5-flash", LLMProvider.GOOGLE),
+        ("gemini-2.0-flash", LLMProvider.GOOGLE),
+        ("gemini-2.5-flash", LLMProvider.GOOGLE),
+        ("gemini-pro-latest", LLMProvider.GOOGLE),
+        ("gemini-flash-latest", LLMProvider.GOOGLE),
+        ("gemini-3-pro-preview", LLMProvider.GOOGLE),
+    ]
+    
+    async def check_model(model_name, provider):
+        try:
+            # Get LLM instance
+            llm = get_llm_model(model=model_name, provider=provider.value)
+            
+            # Attempt a minimal generation (1 token)
+            # We use a try/except block specifically for the API call
+            try:
+                # Use a very simple prompt to minimize cost/latency
+                response = await llm.ainvoke("Ping")
+                return {
+                    "model": model_name,
+                    "status": "available",
+                    "latency_ms": 0, # Placeholder, could measure
+                }
+            except Exception as e:
+                error_str = str(e)
+                status = "error"
+                details = {}
+                
+                if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                    status = "quota_exceeded"
+                    # Parse KPIs from error message
+                    import re
+                    # Extract limit (e.g., "limit: 0" or "limit: 60")
+                    limit_match = re.search(r"limit:\s*(\d+)", error_str)
+                    if limit_match:
+                        details["limit"] = limit_match.group(1)
+                    
+                    # Extract metric (e.g., "requests", "input_token_count")
+                    metric_match = re.search(r"metric:\s*([\w\.]+)", error_str)
+                    if metric_match:
+                        # Simplify metric name
+                        raw_metric = metric_match.group(1)
+                        if "requests" in raw_metric:
+                            details["metric"] = "RPM/RPD" 
+                        elif "token" in raw_metric:
+                            details["metric"] = "TPM/TPD"
+                        else:
+                            details["metric"] = raw_metric.split('.')[-1]
+                            
+                    # Extract retry delay if available
+                    retry_match = re.search(r"retry in\s*([\d\.]+)s", error_str)
+                    if retry_match:
+                        details["retry_after"] = f"{float(retry_match.group(1)):.1f}s"
+                        
+                elif "401" in error_str or "403" in error_str:
+                    status = "auth_error"
+                elif "404" in error_str or "NOT_FOUND" in error_str:
+                    status = "not_found"
+                
+                return {
+                    "model": model_name,
+                    "status": status,
+                    "error": str(e)[:100] + "...",
+                    "kpis": details
+                }
+                
+        except Exception as e:
+            return {
+                "model": model_name,
+                "status": "config_error",
+                "error": str(e)
+            }
 
+    # Run checks in parallel
+    tasks = [check_model(m, p) for m, p in models_to_check]
+    model_statuses = await asyncio.gather(*tasks)
+    
+    # Convert list to dict keyed by model name
+    results = {item["model"]: item for item in model_statuses}
+    
+    return JSONResponse({
+        "status": "completed",
+        "models": results
+    })
 
 # Mount static UI files at /static (MUST be after all API routes)
 # This serves /static/assets/*, /static/ui/
