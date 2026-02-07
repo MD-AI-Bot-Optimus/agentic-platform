@@ -14,3 +14,10 @@ pytest-asyncio==0.21.1
 black==23.12.1
 ruff==0.1.8
 mypy==1.7.1
+google-generativeai
+langchain-google-genai
+python-dotenv==1.0.0
+google-cloud-secret-manager
+duckduckgo-search
+wikipedia
+yfinance

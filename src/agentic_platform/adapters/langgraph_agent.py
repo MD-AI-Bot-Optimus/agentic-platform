@@ -143,10 +143,22 @@ class LangGraphAgent:
             # Add response as AIMessage
             new_messages = messages + [AIMessage(content=response_text)]
             
-            # Track reasoning step
-            self.add_reasoning_step(f"LLM: {response_text[:100]}")
+            # Detect Persona Switch
+            persona = self._extract_persona(response_text)
+            if persona:
+                self.add_reasoning_step(f"**Persona Switch**: 🔄 Handing off to *{persona}*")
+                # Add a specific event for UI to render a handoff node
+                self.tool_calls.append({
+                    "tool": "persona_handoff",
+                    "args": {"to": persona},
+                    "result": f"Switched to {persona}"
+                })
             
-            # Add to memory
+            # Track reasoning step
+            # Clean up the response text for the step log (optional, but keeps it clean)
+            clean_text = response_text.replace(f"[{persona}]:", "").strip() if persona else response_text
+            self.add_reasoning_step(f"LLM: {clean_text[:150]}..." if len(clean_text) > 150 else f"LLM: {clean_text}")
+            
             # Add to memory
             self.memory.add_assistant(response_text)
             
@@ -343,7 +355,29 @@ class LangGraphAgent:
         try:
             # Create initial state
             initial_state = create_initial_state(max_iterations=self.max_iterations)
-            initial_state["messages"] = [HumanMessage(content=prompt)]
+            
+            # Educational/Multi-Agent System Prompt
+            system_prompt = (
+                "You are an advanced AI agent capable of multi-perspective reasoning. "
+                "To solve complex problems effectively, adopt different PERSONAS. "
+                "Start your thought process with '[Persona Name]:' to indicate which perspective you are using.\n"
+                "Recommended Personas:\n"
+                "- [Planner]: Decomposes the task.\n"
+                "- [Researcher]: Looks up information (using tools).\n"
+                "- [Analyst]: Synthesizes data.\n"
+                "- [Critic]: Checks for errors.\n"
+                "- [Finalizer]: Provides the answer.\n\n"
+                "Example:\n"
+                "[Planner]: I need to check the weather first.\n"
+                "use_tool: weather_api with city='London'"
+            )
+            
+            from langchain_core.messages import SystemMessage
+            initial_state["messages"] = [
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=prompt)
+            ]
+            
             initial_state["context"] = context or {}
             
             # Create and run graph
@@ -402,6 +436,13 @@ class LangGraphAgent:
             logger.error(f"LLM call failed: {e}")
             return None
     
+    def _extract_persona(self, text: str) -> Optional[str]:
+        """Extract persona tag like [Researcher]: ..."""
+        match = re.search(r"^\s*\[([a-zA-Z\s]+)\]:", text)
+        if match:
+            return match.group(1).strip()
+        return None
+
     def _extract_tool_use(self, response_text: str) -> tuple[Optional[str], Optional[Dict]]:
         """
         Extract tool use from LLM response.

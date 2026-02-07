@@ -24,6 +24,7 @@ import logging
 from enum import Enum
 from typing import Optional, Dict, Any, List
 
+# Trigger reload for new dependencies
 logger = logging.getLogger(__name__)
 
 
@@ -54,9 +55,13 @@ class LLMConfig:
         LLMProvider.GOOGLE: [
             "gemini-1.5-pro",
             "gemini-1.5-flash",
-            "gemini-2.0-flash", # Added per user request
+            "gemini-2.0-flash",
+            "gemini-2.5-flash",
+            "gemini-pro-latest",
+            "gemini-flash-latest",
             "gemini-2",
             "gemini-3-pro",
+            "gemini-3-pro-preview",
         ],
         LLMProvider.MOCK: [
             "mock-llm"
@@ -67,7 +72,7 @@ class LLMConfig:
     DEFAULT_MODELS = {
         LLMProvider.ANTHROPIC: "claude-3.5-sonnet",
         LLMProvider.OPENAI: "gpt-4-turbo",
-        LLMProvider.GOOGLE: "gemini-1.5-pro",
+        LLMProvider.GOOGLE: "gemini-flash-latest",
         LLMProvider.MOCK: "mock-llm"
     }
     
@@ -193,8 +198,9 @@ def get_llm_model(model: Optional[str] = None, provider: Optional[str] = None) -
             raise ValueError("langchain-openai not installed. Install with: pip install langchain-openai")
     
     elif prov == LLMProvider.GOOGLE:
-        # Try Vertex AI first (Enterprise)
-        if os.getenv("GCP_PROJECT_ID") and os.getenv("GOOGLE_APPLICATION_CREDENTIALS"):
+        # Try Vertex AI first (Enterprise) - ONLY if credentials file actually exists
+        gcp_creds = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+        if os.getenv("GCP_PROJECT_ID") and gcp_creds and os.path.exists(gcp_creds):
             try:
                 from langchain_google_vertexai import ChatVertexAI
                 logger.info(f"Using Google Vertex AI Gemini (model: {model_name})")
